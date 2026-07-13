@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abstractcamera"
+dynamic = ["version"]
+description = "Camera control abstractions (tethered PTP bodies, built-in webcams, simulators) for the Abstract ecosystem"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Laurent-Philippe Albou", email = "contact@abstractcore.ai"}]
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Multimedia :: Graphics :: Capture",
+]
+# Base carries frame processing (ADR 0003): the manager itself decodes JPEGs
+# (detection dispatch, thumbnails, preview probes) and the always-available
+# webcam family needs OpenCV — a camera package that cannot process frames
+# would not be a camera package. Device transports stay explicit extras.
+dependencies = [
+  "numpy>=1.24",
+  "opencv-python>=4.8",
+  # Native AVFoundation webcam capture by device uniqueID (ADR 0009): the
+  # webcam family is a BASE capability and correct device identity is not
+  # optional. Quartz carries the CoreVideo (CVPixelBuffer) bindings.
+  "pyobjc-framework-AVFoundation>=10.0; sys_platform == 'darwin'",
+  "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
+  "pyobjc-framework-libdispatch>=10.0; sys_platform == 'darwin'",
+]
+
+[project.urls]
+Homepage = "https://github.com/lpalbou/abstractcamera"
+Repository = "https://github.com/lpalbou/abstractcamera"
+
+[project.scripts]
+abstractcamera = "abstractcamera.cli:main"
+
+[project.optional-dependencies]
+# Tethered PTP camera control via libgphoto2 (Nikon Z, Sony Alpha, generic
+# PTP bodies). Floor 2.5.10: the single-config widget API is a HARD Sony
+# requirement — a full config-tree walk segfaulted a real A7R IV.
+gphoto2 = ["gphoto2>=2.5.10"]
+# Rolling-clip MP4 encoding and webcam movie recording (PyAV/FFmpeg).
+clips = ["av>=12.0"]
+# Embedded-JPEG thumbnails for RAW captures (NEF/ARW/...) in the catch log.
+raw = ["rawpy>=0.19"]
+test = ["pytest>=7.0.0"]
+docs = ["mkdocs>=1.5", "mkdocs-material>=9.0"]
+all = [
+  "gphoto2>=2.5.10",
+  "av>=12.0",
+  "rawpy>=0.19",
+]
+dev = [
+  "gphoto2>=2.5.10",
+  "av>=12.0",
+  "rawpy>=0.19",
+  "pytest>=7.0.0",
+  "ruff>=0.5.7",
+  "black>=23.0.0",
+  "build>=1.0",
+  "twine>=4.0",
+  "mkdocs>=1.5",
+  "mkdocs-material>=9.0",
+]
+
+[tool.setuptools]
+packages = [
+  "abstractcamera",
+  "abstractcamera.adapters",
+  "abstractcamera.drivers",
+  "abstractcamera.sim",
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.dynamic]
+version = {attr = "abstractcamera.__version__"}
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
