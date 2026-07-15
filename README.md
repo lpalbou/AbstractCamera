@@ -29,6 +29,10 @@ per-device capture folders under `~/Pictures/<device>/`.
     surface — one real dial (resolution), stills that are video frames and
     say so, genuinely confirmable in-process MP4 recording, detection and
     intervalometer riding the frame stream.
+  - **DWARF smart telescope** (network/Wi-Fi, DwarfLab API v2): RTSP live
+    view, device-table exposure/gain dials, album-backed captures that
+    download over Wi-Fi, and the MOUNT as family actions — GOTO (RA/Dec or
+    solar-system), joystick slews, calibration, astro autofocus.
   - **Generic PTP** fallback for unknown tethered bodies.
 - Multi-camera piloting: [`hub.py`](src/abstractcamera/hub.py) — a
   `CameraHub` runs one manager/worker per connected camera (concurrent live
@@ -55,6 +59,7 @@ pip install abstractcamera                 # webcam + simulator (numpy + OpenCV)
 pip install "abstractcamera[gphoto2]"      # + tethered PTP bodies (libgphoto2)
 pip install "abstractcamera[clips]"        # + MP4 clip/movie encoding (PyAV)
 pip install "abstractcamera[raw]"          # + RAW capture thumbnails (rawpy)
+pip install "abstractcamera[dwarf]"        # + DWARF smart telescopes (Wi-Fi)
 pip install "abstractcamera[all]"          # everything above
 ```
 

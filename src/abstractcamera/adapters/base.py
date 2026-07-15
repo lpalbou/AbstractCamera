@@ -176,6 +176,25 @@ class CameraAdapter(ABC):
         """Ledger patience before mismatches count toward a revert."""
         return 10.0
 
+    def family_action_names(self) -> tuple[str, ...]:
+        """Family-specific one-shot ACTIONS beyond the canonical focus
+        drives (same contract: executed once, never cached, never replayed
+        — a replayed mount slew would physically move a telescope). The
+        manager accepts ACTION_WIDGET_NAMES plus these while this family
+        is connected."""
+        return ()
+
+    def poll_session_events(self, camera) -> None:
+        """Called once per worker loop iteration (between preview frames).
+
+        PTP bodies only produce events around captures, so the default is a
+        no-op — the capture drain windows handle them. Families whose
+        device SPEAKS SPONTANEOUSLY (a telescope reporting GOTO progress,
+        battery, tracking state) override this to forward queued session
+        events through the event sink. Implementations must be non-blocking
+        and bounded (this runs on the live-view thread)."""
+        return
+
     def settle_escalations(self) -> dict[str, str]:
         """widget name -> escalation kind, consulted when a ledger entry is
         about to be declared reverted (e.g. Nikon's live-view-pause retry)."""

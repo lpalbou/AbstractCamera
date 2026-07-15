@@ -96,11 +96,13 @@ class ConfigLedgerMixin:
             cache_snapshot = dict(self._config_cache)
         for name, value in actions:
             receipt = self._adapter.run_action(camera, name, value, cache_snapshot)
+            # reason "action": the channel outgrew focus drives (telescope
+            # mounts queue GOTO/joystick through it too — family actions).
             if not receipt.ok:
-                self._append_event(kind="error", reason="focus",
+                self._append_event(kind="error", reason="action",
                                    note=f"camera action {name} failed: {receipt.error}")
             elif receipt.note:
-                self._append_event(kind="trigger", reason="focus", note=receipt.note)
+                self._append_event(kind="trigger", reason="action", note=receipt.note)
 
     def _refresh_config_cache(self, camera) -> None:
         # The adapter owns the widget list and the read mechanics

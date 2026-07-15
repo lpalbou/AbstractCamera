@@ -26,18 +26,27 @@ CameraManager (camera_manager.py + mixins)     family-agnostic orchestration
   the `capabilities` descriptor host UIs adapt to.
 - **CameraSession** is the transport: the protocol the manager loop speaks
   (`init/exit/get_abilities/capture_preview/trigger_capture/wait_for_event/
-  file_get` + optional single-config widget I/O). Three implementations:
+  file_get` + optional single-config widget I/O). Four implementations:
   the real `gphoto2.Camera` (structural typing, zero wrapping), the
-  simulator, and `WebcamSession`. Constants are numerically pinned to
-  libgphoto2 (`wire.py`) — that is what makes the transports
-  interchangeable without translation.
+  simulator, `WebcamSession`, and `DwarfSession` (a Wi-Fi smart telescope:
+  RTSP frames as previews, album entries as FILE_ADDED, HTTP downloads as
+  file_get — ADR 0010). Constants are numerically pinned to libgphoto2
+  (`wire.py`) — that is what makes the transports interchangeable without
+  translation.
 
 Drivers (`drivers/`) create sessions and own transport-specific setup:
 `Gphoto2Driver` (autodetect, port binding for multi-body targeting, macOS
 PTP-daemon release), `WebcamDriver` (non-invasive AVFoundation enumeration
-with ffmpeg-based naming), `FakeDriver` (the test seam). `discovery.py`
-resolves drivers per connect (fake env → simulator only) and aggregates
-`list_cameras()`.
+with ffmpeg-based naming), `DwarfDriver` (configured network hosts, never
+scanned), `FakeDriver` (the test seam). `discovery.py` resolves drivers
+per connect (fake env → simulator only) and aggregates `list_cameras()`.
+
+Families with degrees of freedom beyond the sensor (the DWARF's alt-az
+mount) extend the one-shot ACTION channel via
+`CameraAdapter.family_action_names()` — GOTO/joystick/calibration ride the
+same never-cached, never-replayed contract as focus drives, and
+spontaneous device notifications (GOTO progress, battery) forward between
+preview frames through `poll_session_events()`.
 
 ## Threading contract
 

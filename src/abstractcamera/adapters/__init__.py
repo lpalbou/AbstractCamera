@@ -52,6 +52,10 @@ def select_adapter(model: str | None, transport_module) -> CameraAdapter:
         from abstractcamera.adapters.webcam import WebcamAdapter
 
         return WebcamAdapter(transport_module)
+    if "dwarf" in text:
+        from abstractcamera.adapters.dwarf import DwarfAdapter
+
+        return DwarfAdapter(transport_module)
     if "sony" in text or "ilce" in text:
         return SonyAlphaAdapter(transport_module)
     if "nikon" in text:

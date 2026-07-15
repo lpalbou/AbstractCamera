@@ -44,7 +44,7 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
 | `get_latest_frame()` | `(jpeg_bytes | None, sequence_int)` — the live-view frame. |
 | `set_config_value(name, value)` | Queues a widget write; tracked in the `pending_writes` ledger until confirmed or explicitly reverted. Validated against the family's widget list. |
 | `request_trigger()` | Fires the current capture mode (single/burst/video toggle). Refused during interval sequences. |
-| `request_action(name, value=None)` | One-shot focus actions (`autofocusdrive`, `manualfocusdrive`); never cached, never replayed. |
+| `request_action(name, value=None)` | One-shot actions; never cached, never replayed. Canonical focus actions (`autofocusdrive`, `manualfocusdrive`) plus the family's own (`status()["actions"]` — the DWARF family adds mount actions: `gotoradec` "ra_deg,dec_deg[,label]", `gotosolar` "moon"/"jupiter"/..., `stopgoto`, `calibrate`, `joystick` "angle_deg,length,speed", `joystickstop`). |
 | `set_capture_mode(mode, burst_count=, burst_hold_s=, burst_speed=)` | `single|burst|video`; burst knobs are family-dependent (see `capabilities.burst.mode`). |
 | `set_detection_mode(mode, target=, sensitivity=)` | `off|monitor|auto` × `lightning|meteor|motion`; auto-fire is arbitrated against sequences. |
 | `start_interval_sequence(interval_s, count, start_delay_s=0, liveview=True, sequence_name=None)` | Absolute-deadline intervalometer; validates exposure vs interval (family `nominal_exposure_s` when no shutter widget exists); JSONL manifest per sequence. `sequence_name` names the run (see `set_sequence_name`). |
@@ -60,7 +60,7 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
 
 ```python
 {
-  "family": "sony_alpha" | "nikon_z" | "webcam" | "generic",
+  "family": "sony_alpha" | "nikon_z" | "webcam" | "dwarf" | "generic",
   "display_name": str,
   "config_widgets": [...],      # dials this family can EVER have (hide the rest)
   "burst": {"mode": "count"|"duration", ...},
@@ -71,6 +71,9 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
   "focus": {"supported"?: false, "mf_requires_manual_focus": bool, "indication_widget": ...},
   "preview_during_exposure": bool,
   "exposure_controls"?: false,  # webcam: the hardware auto-exposes, period
+  "mount"?: {"kind": "alt-az", "goto": [...], "joystick": bool,   # smart telescopes
+             "calibration": bool, "tracking": str},
+  "actions"?: [...],            # family actions beyond the focus drives
   "notes"?: [...],
 }
 ```

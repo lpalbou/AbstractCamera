@@ -22,7 +22,31 @@ Hardware-validated: Nikon Z (Z6 II), Sony Alpha (A7R IV), macOS built-in
 cameras (MacBook Pro), and an iPhone via Continuity Camera (validated
 wirelessly at 1080p). Other libgphoto2-supported PTP bodies get the generic
 adapter — the honest write ledger and capture flows apply, family quirks may
-not.
+not. DWARF smart telescopes connect over Wi-Fi through the `dwarf` family
+(DwarfLab API v2 — implemented from the published spec).
+
+**Can I control the DWARF over its USB-C port?**
+
+No — and that is the device's design, not a package gap (measured
+2026-07-14 on a DWARF 3): USB-C enumerates, at most, as a USB
+MASS-STORAGE gadget exposing the microSD (volume "U盘", exFAT — the full
+album tree: `Normal_Photos/`, `Astronomy/` FITS subs + calibration
+frames, `Videos/`, `Panoramas/`). That is a fast bulk-import path for
+captures, and nothing more: no serial endpoint, no USB network interface,
+no control plane. Piloting (live view, dials, capture, mount) is
+Wi-Fi-only — see the next question.
+
+**Can I steer the DWARF's mount from here?**
+
+Yes — the mount is part of the family: `request_action("gotoradec",
+"83.82,-5.39,M42")` (degrees, J2000), `gotosolar` ("moon", "jupiter"...),
+`joystick`/`joystickstop` for manual slews, `calibrate` for the initial
+sky-solve, and `autofocusdrive` runs the astro autofocus. Actions are
+one-shot and never replayed (a cached slew replaying on reconnect would
+physically move the telescope). GOTO progress arrives in the catch log as
+the device's own state notifications. Requirements: same network (or join
+the DWARF's own Wi-Fi), `ABSTRACTCAMERA_DWARF_HOSTS` set to its IP, and the
+DWARFLAB app closed — the device grants ONE master controller at a time.
 
 **Why does my iPhone show up as a camera with no cable connected?**
 That is Apple's Continuity Camera: an iPhone/iPad signed into the same Apple

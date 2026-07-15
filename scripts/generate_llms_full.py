@@ -12,6 +12,9 @@ DOCS = [
     "docs/adr/0005_detection_in_package_analyzers_injected.md",
     "docs/adr/0006_discovery_and_camera_identity.md",
     "docs/adr/0007_regression_policy_for_unconnected_hardware.md",
+    "docs/adr/0008_multi_camera_hub_and_capture_layout.md",
+    "docs/adr/0009_webcam_identity_by_unique_id.md",
+    "docs/adr/0010_dwarf_network_family_and_mount_actions.md",
     "CHANGELOG.md",
 ]
 

@@ -330,6 +330,11 @@ class WorkerLoopMixin:
                     self._latest_frame_seq += 1
                     self._measured_fps = fps
 
+                # Spontaneous device events (telescope GOTO/tracking/battery
+                # notifications) forward between frames; a no-op for PTP and
+                # webcam families (their events only exist around captures).
+                adapter.poll_session_events(camera)
+
                 # The preview ring feeds detection event clips AND the rolling
                 # pre-capture buffer; appending here (not in the detection
                 # path) keeps it filling whenever frames flow.

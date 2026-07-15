@@ -317,7 +317,10 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         by the worker; never cached, never replayed (see ACTION_WIDGET_NAMES)."""
         if not self._connected:
             raise CameraControlError("No camera is connected.")
-        if name not in ACTION_WIDGET_NAMES:
+        adapter = self._adapter
+        allowed = tuple(ACTION_WIDGET_NAMES) + (
+            adapter.family_action_names() if adapter is not None else ())
+        if name not in allowed:
             raise CameraControlError(f"Unsupported camera action: {name}")
         with self._state_lock:
             sequence = self._interval_sequence
@@ -609,7 +612,11 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
                 # Sequence ledger: counters survive the frontend's tab-hidden
                 # phases trivially (unlike catch-log events, which evict).
                 "interval": sequence.to_status() if sequence is not None else {"state": "idle"},
-                "actions": list(ACTION_WIDGET_NAMES),
+                # Canonical focus actions plus this family's own (a
+                # telescope adds mount actions; see family_action_names).
+                "actions": list(ACTION_WIDGET_NAMES) + (
+                    list(self._adapter.family_action_names())
+                    if self._adapter is not None else []),
                 # Family descriptor: what THIS body offers, so the UI adapts
                 # (burst count vs duration, movie confirmability, ISO Auto
                 # story, Save To vocabulary...). None until connected.

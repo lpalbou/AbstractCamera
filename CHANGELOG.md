@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- **DWARF smart telescopes (new `dwarf` family, ADR 0010).** A DWARF 3 is
+  piloted over Wi-Fi through the existing abstraction: RTSP live view,
+  exposure/gain dials carrying the device's OWN gear tables, IR-cut filter
+  positions, stills/burst/movie landing in the device album (microSD) and
+  downloading over HTTP, battery/temperature telemetry. The MOUNT is
+  exposed as family actions on the one-shot action channel (never cached,
+  never replayed): `gotoradec` (RA/Dec degrees, J2000), `gotosolar`,
+  `stopgoto`, `calibrate`, `joystick`/`joystickstop`; the canonical focus
+  actions map to the astro autofocus and single-step focus. GOTO/
+  calibration/tracking progress arrives in the catch log as the device's
+  own state notifications. Master-lock honesty: connect() refuses with
+  actionable text when the DWARFLAB app holds control. Protocol implemented
+  from DwarfLab's published API v2 spec (vendored minimal proto3 codec —
+  the GPL community bridges are not linked); `websocket-client` is the one
+  new dependency behind the `dwarf` extra. Discovery is configured, never
+  scanned (`ABSTRACTCAMERA_DWARF_HOSTS`); `scripts/validate_dwarf.py` is
+  the active-discovery + hardware validation tool (mount motion opt-in).
+- **Adapters can extend the action vocabulary** —
+  `CameraAdapter.family_action_names()` (default empty) adds family
+  actions to `request_action`/`status()["actions"]`, and
+  `poll_session_events()` (default no-op) lets spontaneous-speaking
+  devices (telescope state notifications) surface events between preview
+  frames. Catch-log action events now carry `reason: "action"` (was
+  `"focus"` — the channel outgrew focus drives).
 - **`CameraHub.annotate_entries(entries)`** — the live-state annotation of
   discovery entries (connected / device_uid / active) split out of
   `list_cameras()`, so callers that cache the expensive USB probe (gphoto2

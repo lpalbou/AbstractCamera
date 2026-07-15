@@ -58,6 +58,13 @@ def resolve_drivers() -> list:
             drivers.append(webcam)
     except ImportError:
         pass
+    # Network smart telescopes (DWARF): listed only when hosts are
+    # configured (ABSTRACTCAMERA_DWARF_HOSTS) — nothing is probed here.
+    from abstractcamera.drivers.dwarf_driver import DwarfDriver
+
+    dwarf = DwarfDriver()
+    if dwarf.available():
+        drivers.append(dwarf)
     return drivers
 
 

@@ -6,6 +6,7 @@
 pip install abstractcamera                  # webcam + simulator
 pip install "abstractcamera[gphoto2]"       # + tethered PTP bodies
 pip install "abstractcamera[clips,raw]"     # + MP4 encoding, RAW thumbnails
+pip install "abstractcamera[dwarf]"         # + DWARF smart telescopes (Wi-Fi)
 ```
 
 macOS note for tethered bodies: the package releases Apple's PTP daemons
@@ -44,6 +45,42 @@ Webcam entries carry a `kind`: `built_in` (the machine's own camera),
 Camera — same Apple ID, no cable), or `external` (USB cameras). Continuity
 devices sort last and are never the default; select one explicitly and it
 works as a normal webcam-family camera.
+
+## Smart telescopes (DWARF) — a camera you can also steer
+
+DWARF 3 units are Wi-Fi devices (`pip install "abstractcamera[dwarf]"`).
+Discovery is configured, not scanned: name the telescope's IP and it
+appears in `list_cameras()` like any other camera.
+
+```bash
+# AP mode (you joined the DWARF's own Wi-Fi): the device is always 192.168.88.1
+# STA mode (the DWARF joined YOUR network): the DWARFLAB app shows its IP
+export ABSTRACTCAMERA_DWARF_HOSTS=192.168.88.1
+```
+
+```python
+manager = CameraManager()
+manager.connect(camera_id="dwarf:192.168.88.1")   # master lock + RTSP live view
+
+manager.set_config_value("shutterspeed", "15")    # the device's own gear tables
+manager.set_config_value("gain", "80")
+manager.request_trigger()   # shutter -> DWARF album (microSD) -> Wi-Fi download
+
+# The MOUNT is driven through one-shot actions (never cached, never replayed):
+manager.request_action("calibrate")                     # once, under open sky
+manager.request_action("gotoradec", "83.82,-5.39,M42")  # RA/Dec in degrees (J2000)
+manager.request_action("gotosolar", "moon")
+manager.request_action("joystick", "90,1,5")            # angle°, length 0-1, °/s
+manager.request_action("joystickstop")
+manager.request_action("autofocusdrive")                # astro autofocus
+```
+
+GOTO/calibration/tracking progress arrives in the catch log
+(`get_events()`) as the device's own status notifications ("GOTO
+running/success/failed"). One caveat: the DWARF grants ONE controller at a
+time — close the DWARFLAB app (or release control there) or connect()
+refuses with exactly that message. Hardware smoke test:
+`python3 scripts/validate_dwarf.py` (mount motion strictly opt-in).
 
 ## Live view, dials, capture
 

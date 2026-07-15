@@ -1,12 +1,12 @@
 # AbstractCamera
 
-> Camera control abstractions: one thread-safe orchestrator (CameraManager) drives tethered PTP bodies (Nikon Z, Sony Alpha — hardware-validated), the machine's own cameras (macOS AVFoundation), and a scriptable simulator, behind a session protocol with per-family adapters. A CameraHub pilots several cameras at once (one worker each; validated with four simultaneously) with per-device capture folders (`~/Pictures/<device>/[<sequence>/]`) and an on-device/local save policy. Live view, honest config dials with a write-verification ledger, single/burst/movie capture, an absolute-deadline intervalometer, live-view detection with auto-fire, rolling pre-capture clips, capture downloads.
+> Camera control abstractions: one thread-safe orchestrator (CameraManager) drives tethered PTP bodies (Nikon Z, Sony Alpha — hardware-validated), the machine's own cameras (macOS AVFoundation), DWARF smart telescopes over Wi-Fi (camera + pilotable alt-az mount), and a scriptable simulator, behind a session protocol with per-family adapters. A CameraHub pilots several cameras at once (one worker each; validated with four simultaneously) with per-device capture folders (`~/Pictures/<device>/[<sequence>/]`) and an on-device/local save policy. Live view, honest config dials with a write-verification ledger, single/burst/movie capture, mount GOTO/joystick/calibration as one-shot actions, an absolute-deadline intervalometer, live-view detection with auto-fire, rolling pre-capture clips, capture downloads.
 
 This repository's source of truth is the code under `src/abstractcamera/` (docs in `docs/`).
 
 Agent quickstart:
-- **Use the library**: `README.md` → `docs/getting-started.md` → `docs/api.md`. `pip install abstractcamera` (webcam+sim), extras: `[gphoto2]` (PTP), `[clips]` (MP4), `[raw]` (thumbnails). CLI: `abstractcamera list` / `abstractcamera preview`.
-- **Understand the design**: `docs/architecture.md` (manager / adapter / session layers, threading, hardware-scarred invariants), `docs/adr/` (8 decision records incl. the adversarial election of the session-protocol boundary and the multi-camera hub).
+- **Use the library**: `README.md` → `docs/getting-started.md` → `docs/api.md`. `pip install abstractcamera` (webcam+sim), extras: `[gphoto2]` (PTP), `[clips]` (MP4), `[raw]` (thumbnails), `[dwarf]` (smart telescopes over Wi-Fi). CLI: `abstractcamera list` / `abstractcamera preview`.
+- **Understand the design**: `docs/architecture.md` (manager / adapter / session layers, threading, hardware-scarred invariants), `docs/adr/` (10 decision records incl. the adversarial election of the session-protocol boundary, the multi-camera hub, and the DWARF network family).
 - **Add a camera family**: `docs/api.md` § Extending; adapters in `src/abstractcamera/adapters/`, sessions/drivers in `src/abstractcamera/drivers/`; conformance suite in `tests/test_session_protocol.py`; hardware validation required before support claims (ADR 0007/0008 discipline).
 - **Camera-less dev/CI**: `ABSTRACTCAMERA_FAKE=1` (all transports become the simulator); scenario scripting via `abstractcamera.sim.gphoto2.configure(profile="z6ii"|"a7r4", ...)`; test seam `CameraManager(driver=FakeDriver(module))`.
 - **Debug a device issue**: `docs/troubleshooting.md` (TCC permission, ptpcamerad claims, Sony busy/silent-AF behaviors, stale ids).
@@ -18,6 +18,7 @@ Reality checks (shipped behavior, anchored in code):
 - The webcam family exposes resolution + zoom (videoZoomFactor — the ONE manual control macOS grants) because the OS accepts nothing else: manual exposure/ISO/WB/focus AVFoundation APIs are iOS-only (measured unsupported on the built-in camera AND a Continuity iPhone; iPhone framing/depth effects are macOS Control Center Video Effects toggles, not app APIs). Capabilities never pretend (ADR 0004).
 - All PTP string widget reads are NULL-guarded via ctypes (`ptp_safe`): python-gphoto2 segfaults on NULL string values (observed on a Sony A7R IV mid-wake, 2026-07-12) — a NULL reads as an absent value, never a crash. Webcam ids are AVFoundation uniqueIDs and capture opens THAT device natively (ADR 0009, after a real positional-mapping inversion): names cannot point at the wrong camera; residual failures fail closed.
 - Sony movie start/stop is accepted but UNCONFIRMABLE over USB (no events, no status); webcam movies are confirmable (the package writes the MP4).
+- DWARF smart telescopes (family `dwarf`): protobuf-over-WebSocket control plane implemented from DwarfLab's published API v2 spec (vendored minimal proto3 codec; `websocket-client` behind the `dwarf` extra), RTSP live view, captures land in the device album (microSD) and download over HTTP, ONE master controller at a time (connect refuses honestly when the DWARFLAB app holds the lock). The mount rides the action channel: `gotoradec`/`gotosolar`/`stopgoto`/`calibrate`/`joystick`/`joystickstop` — one-shot, never cached, never replayed. Discovery is configured (`ABSTRACTCAMERA_DWARF_HOSTS`), never scanned; `scripts/validate_dwarf.py` sweeps deliberately (mount motion opt-in).
 - `is_tethering_available()` keeps its historic PTP-only meaning; general availability is `status()["available"]`.
 
 ## Docs
@@ -69,6 +70,10 @@ per-device capture folders under `~/Pictures/<device>/`.
     surface — one real dial (resolution), stills that are video frames and
     say so, genuinely confirmable in-process MP4 recording, detection and
     intervalometer riding the frame stream.
+  - **DWARF smart telescope** (network/Wi-Fi, DwarfLab API v2): RTSP live
+    view, device-table exposure/gain dials, album-backed captures that
+    download over Wi-Fi, and the MOUNT as family actions — GOTO (RA/Dec or
+    solar-system), joystick slews, calibration, astro autofocus.
   - **Generic PTP** fallback for unknown tethered bodies.
 - Multi-camera piloting: [`hub.py`](src/abstractcamera/hub.py) — a
   `CameraHub` runs one manager/worker per connected camera (concurrent live
@@ -95,6 +100,7 @@ pip install abstractcamera                 # webcam + simulator (numpy + OpenCV)
 pip install "abstractcamera[gphoto2]"      # + tethered PTP bodies (libgphoto2)
 pip install "abstractcamera[clips]"        # + MP4 clip/movie encoding (PyAV)
 pip install "abstractcamera[raw]"          # + RAW capture thumbnails (rawpy)
+pip install "abstractcamera[dwarf]"        # + DWARF smart telescopes (Wi-Fi)
 pip install "abstractcamera[all]"          # everything above
 ```
 
@@ -175,6 +181,7 @@ MIT — see [LICENSE](LICENSE).
 pip install abstractcamera                  # webcam + simulator
 pip install "abstractcamera[gphoto2]"       # + tethered PTP bodies
 pip install "abstractcamera[clips,raw]"     # + MP4 encoding, RAW thumbnails
+pip install "abstractcamera[dwarf]"         # + DWARF smart telescopes (Wi-Fi)
 ```
 
 macOS note for tethered bodies: the package releases Apple's PTP daemons
@@ -213,6 +220,42 @@ Webcam entries carry a `kind`: `built_in` (the machine's own camera),
 Camera — same Apple ID, no cable), or `external` (USB cameras). Continuity
 devices sort last and are never the default; select one explicitly and it
 works as a normal webcam-family camera.
+
+## Smart telescopes (DWARF) — a camera you can also steer
+
+DWARF 3 units are Wi-Fi devices (`pip install "abstractcamera[dwarf]"`).
+Discovery is configured, not scanned: name the telescope's IP and it
+appears in `list_cameras()` like any other camera.
+
+```bash
+# AP mode (you joined the DWARF's own Wi-Fi): the device is always 192.168.88.1
+# STA mode (the DWARF joined YOUR network): the DWARFLAB app shows its IP
+export ABSTRACTCAMERA_DWARF_HOSTS=192.168.88.1
+```
+
+```python
+manager = CameraManager()
+manager.connect(camera_id="dwarf:192.168.88.1")   # master lock + RTSP live view
+
+manager.set_config_value("shutterspeed", "15")    # the device's own gear tables
+manager.set_config_value("gain", "80")
+manager.request_trigger()   # shutter -> DWARF album (microSD) -> Wi-Fi download
+
+# The MOUNT is driven through one-shot actions (never cached, never replayed):
+manager.request_action("calibrate")                     # once, under open sky
+manager.request_action("gotoradec", "83.82,-5.39,M42")  # RA/Dec in degrees (J2000)
+manager.request_action("gotosolar", "moon")
+manager.request_action("joystick", "90,1,5")            # angle°, length 0-1, °/s
+manager.request_action("joystickstop")
+manager.request_action("autofocusdrive")                # astro autofocus
+```
+
+GOTO/calibration/tracking progress arrives in the catch log
+(`get_events()`) as the device's own status notifications ("GOTO
+running/success/failed"). One caveat: the DWARF grants ONE controller at a
+time — close the DWARFLAB app (or release control there) or connect()
+refuses with exactly that message. Hardware smoke test:
+`python3 scripts/validate_dwarf.py` (mount motion strictly opt-in).
 
 ## Live view, dials, capture
 
@@ -340,18 +383,27 @@ CameraManager (camera_manager.py + mixins)     family-agnostic orchestration
   the `capabilities` descriptor host UIs adapt to.
 - **CameraSession** is the transport: the protocol the manager loop speaks
   (`init/exit/get_abilities/capture_preview/trigger_capture/wait_for_event/
-  file_get` + optional single-config widget I/O). Three implementations:
+  file_get` + optional single-config widget I/O). Four implementations:
   the real `gphoto2.Camera` (structural typing, zero wrapping), the
-  simulator, and `WebcamSession`. Constants are numerically pinned to
-  libgphoto2 (`wire.py`) — that is what makes the transports
-  interchangeable without translation.
+  simulator, `WebcamSession`, and `DwarfSession` (a Wi-Fi smart telescope:
+  RTSP frames as previews, album entries as FILE_ADDED, HTTP downloads as
+  file_get — ADR 0010). Constants are numerically pinned to libgphoto2
+  (`wire.py`) — that is what makes the transports interchangeable without
+  translation.
 
 Drivers (`drivers/`) create sessions and own transport-specific setup:
 `Gphoto2Driver` (autodetect, port binding for multi-body targeting, macOS
 PTP-daemon release), `WebcamDriver` (non-invasive AVFoundation enumeration
-with ffmpeg-based naming), `FakeDriver` (the test seam). `discovery.py`
-resolves drivers per connect (fake env → simulator only) and aggregates
-`list_cameras()`.
+with ffmpeg-based naming), `DwarfDriver` (configured network hosts, never
+scanned), `FakeDriver` (the test seam). `discovery.py` resolves drivers
+per connect (fake env → simulator only) and aggregates `list_cameras()`.
+
+Families with degrees of freedom beyond the sensor (the DWARF's alt-az
+mount) extend the one-shot ACTION channel via
+`CameraAdapter.family_action_names()` — GOTO/joystick/calibration ride the
+same never-cached, never-replayed contract as focus drives, and
+spontaneous device notifications (GOTO progress, battery) forward between
+preview frames through `poll_session_events()`.
 
 ## Threading contract
 
@@ -456,7 +508,7 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
 | `get_latest_frame()` | `(jpeg_bytes | None, sequence_int)` — the live-view frame. |
 | `set_config_value(name, value)` | Queues a widget write; tracked in the `pending_writes` ledger until confirmed or explicitly reverted. Validated against the family's widget list. |
 | `request_trigger()` | Fires the current capture mode (single/burst/video toggle). Refused during interval sequences. |
-| `request_action(name, value=None)` | One-shot focus actions (`autofocusdrive`, `manualfocusdrive`); never cached, never replayed. |
+| `request_action(name, value=None)` | One-shot actions; never cached, never replayed. Canonical focus actions (`autofocusdrive`, `manualfocusdrive`) plus the family's own (`status()["actions"]` — the DWARF family adds mount actions: `gotoradec` "ra_deg,dec_deg[,label]", `gotosolar` "moon"/"jupiter"/..., `stopgoto`, `calibrate`, `joystick` "angle_deg,length,speed", `joystickstop`). |
 | `set_capture_mode(mode, burst_count=, burst_hold_s=, burst_speed=)` | `single|burst|video`; burst knobs are family-dependent (see `capabilities.burst.mode`). |
 | `set_detection_mode(mode, target=, sensitivity=)` | `off|monitor|auto` × `lightning|meteor|motion`; auto-fire is arbitrated against sequences. |
 | `start_interval_sequence(interval_s, count, start_delay_s=0, liveview=True, sequence_name=None)` | Absolute-deadline intervalometer; validates exposure vs interval (family `nominal_exposure_s` when no shutter widget exists); JSONL manifest per sequence. `sequence_name` names the run (see `set_sequence_name`). |
@@ -472,7 +524,7 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
 
 ```python
 {
-  "family": "sony_alpha" | "nikon_z" | "webcam" | "generic",
+  "family": "sony_alpha" | "nikon_z" | "webcam" | "dwarf" | "generic",
   "display_name": str,
   "config_widgets": [...],      # dials this family can EVER have (hide the rest)
   "burst": {"mode": "count"|"duration", ...},
@@ -483,6 +535,9 @@ bodies are connected. Captures land in `<capture_root>/<device_uid>/`.
   "focus": {"supported"?: false, "mf_requires_manual_focus": bool, "indication_widget": ...},
   "preview_during_exposure": bool,
   "exposure_controls"?: false,  # webcam: the hardware auto-exposes, period
+  "mount"?: {"kind": "alt-az", "goto": [...], "joystick": bool,   # smart telescopes
+             "calibration": bool, "tracking": str},
+  "actions"?: [...],            # family actions beyond the focus drives
   "notes"?: [...],
 }
 ```
@@ -535,7 +590,31 @@ Hardware-validated: Nikon Z (Z6 II), Sony Alpha (A7R IV), macOS built-in
 cameras (MacBook Pro), and an iPhone via Continuity Camera (validated
 wirelessly at 1080p). Other libgphoto2-supported PTP bodies get the generic
 adapter — the honest write ledger and capture flows apply, family quirks may
-not.
+not. DWARF smart telescopes connect over Wi-Fi through the `dwarf` family
+(DwarfLab API v2 — implemented from the published spec).
+
+**Can I control the DWARF over its USB-C port?**
+
+No — and that is the device's design, not a package gap (measured
+2026-07-14 on a DWARF 3): USB-C enumerates, at most, as a USB
+MASS-STORAGE gadget exposing the microSD (volume "U盘", exFAT — the full
+album tree: `Normal_Photos/`, `Astronomy/` FITS subs + calibration
+frames, `Videos/`, `Panoramas/`). That is a fast bulk-import path for
+captures, and nothing more: no serial endpoint, no USB network interface,
+no control plane. Piloting (live view, dials, capture, mount) is
+Wi-Fi-only — see the next question.
+
+**Can I steer the DWARF's mount from here?**
+
+Yes — the mount is part of the family: `request_action("gotoradec",
+"83.82,-5.39,M42")` (degrees, J2000), `gotosolar` ("moon", "jupiter"...),
+`joystick`/`joystickstop` for manual slews, `calibrate` for the initial
+sky-solve, and `autofocusdrive` runs the astro autofocus. Actions are
+one-shot and never replayed (a cached slew replaying on reconnect would
+physically move the telescope). GOTO progress arrives in the catch log as
+the device's own state notifications. Requirements: same network (or join
+the DWARF's own Wi-Fi), `ABSTRACTCAMERA_DWARF_HOSTS` set to its IP, and the
+DWARFLAB app closed — the device grants ONE master controller at a time.
 
 **Why does my iPhone show up as a camera with no cable connected?**
 That is Apple's Continuity Camera: an iPhone/iPad signed into the same Apple
@@ -672,6 +751,33 @@ nothing pretends to record.
 The ring holds the RECENT contiguous span only; stale frames from an
 earlier phase don't count (that lie was found and fixed on hardware). Wait
 for `status()["rolling"]["buffered_s"]` to reach ~2s.
+
+**`Could not reach the DWARF at <ip>:9900`**
+The telescope is not on this network (or asleep). AP mode: join the
+DWARF's own Wi-Fi — the device is always `192.168.88.1`. STA mode: connect
+the DWARF to your router in the DWARFLAB app (Connection Settings shows
+its IP) and export `ABSTRACTCAMERA_DWARF_HOSTS=<that ip>`. Discovery
+sweep: `python3 scripts/validate_dwarf.py` probes the local /24 for the
+control port (the library itself never scans).
+
+**`The DWARF granted only observer access`**
+The device allows ONE master controller and the DWARFLAB app currently
+holds it. Close the app (or release control in it) and reconnect. The
+refusal is deliberate: a session without the master lock looks connected
+but every write would fail downstream.
+
+**DWARF connects but `no file appeared in the DWARF's album`**
+Captures land on the telescope's microSD first: no card (or a full one)
+means no file — the DWARF's own error codes surface in the catch log
+(`no SD card is present`, `writing ... failed`). Slow Wi-Fi can also push
+the album entry past the announce window; the file still lands in the
+album and downloads on the next capture's poll.
+
+**DWARF GOTO fails immediately**
+`GOTO failed (target below horizon or plate solving failed)` is the
+device's own refusal. Run `request_action("calibrate")` once under open
+sky first (`no GOTO has run yet` names the same gap), check the target is
+above the horizon, and mind the mount limit warnings in the catch log.
 
 **Simulated camera in tests without env vars**
 `CameraManager(driver=FakeDriver(abstractcamera.sim.gphoto2))` — the
@@ -872,12 +978,258 @@ on hardware through the package (22+11 checks) the same day; the Nikon Z6 II
 remains protected by gates 1-4 pending its next physical session.
 
 
+## FILE: docs/adr/0008_multi_camera_hub_and_capture_layout.md
+
+# ADR 0008: Multi-camera hub, device identity, and the capture layout
+
+Status: accepted (2026-07-12)
+
+## Context
+
+The host's Capture panel grew from "one camera at a time" to "pilot every
+connected camera at once" (owner directive 2026-07-12): a Nikon Z6 II, a
+Sony A7R IV, the MacBook's own camera, and an iPhone (Continuity) must run
+concurrently — each with its own dials, sequences, detections, recordings —
+and captures must land somewhere a user can FIND, organized per device.
+
+Two designs were on the table:
+
+1. Make `CameraManager` internally multi-session (one worker juggling all
+   cameras, or a session registry inside the manager).
+2. Keep `CameraManager` strictly single-camera and add a thin `CameraHub`
+   that owns N managers.
+
+## Decision
+
+**Design 2.** `CameraManager` stays exactly what the hardware validation
+proved: one camera, one worker thread that owns ALL of that camera's I/O.
+This is also libgphoto2's documented thread-safety model — the library is
+safe across DIFFERENT cameras on different threads, unsafe within one.
+`CameraHub` is a registry keyed by device uid: connect-by-id reuse, an
+ACTIVE selection for single-panel hosts, shared manager configuration
+(capture root, frame analyzer), annotated discovery, survivor fallback on
+disconnect. No manager internals changed for concurrency.
+
+**Device identity**: at connect the manager derives a filesystem-safe slug
+from the model/label (`Nikon Z6_2` → `nikon_z6_2`, parentheticals stripped)
+plus a best-effort serial (`serialnumber` widget; webcams have none). The
+hub disambiguates identical bodies with a serial-tail suffix (else an
+index). The uid names everything user-visible: capture folders, HTTP
+addressing, panel selection.
+
+**Capture layout** (owner-specified): `<capture_root>/<device_slug>/`, with
+root defaulting to `~/Pictures` — captures belong where users look for
+pictures. An optional SEQUENCE NAME (`set_sequence_name` /
+`start_interval_sequence(sequence_name=...)`) nests everything one level
+deeper. `set_capture_dir()` keeps its legacy explicit-override meaning for
+embedders and tests.
+
+**Save policy**: `set_save_policy(download_locally=False)` announces
+captures in the event feed but never fetches — files live on the camera's
+own storage. Families without storage (`save_modes() == ["local"]`) refuse
+device-only honestly. Device-only + a volatile capture target (camera RAM)
+draws a loud error event: those shots would exist NOWHERE.
+
+## Consequences
+
+- Concurrency cost is one thread per camera — measured fine with four
+  cameras (2 PTP + 2 AVFoundation, 15-40 fps each, stills/timelapse/movie
+  running simultaneously; see `scripts/validate_multicam.py`).
+- The `get_default_manager()` singleton remains for single-camera hosts;
+  hub and singleton must not share a body (first claim wins, second refuses
+  honestly — unchanged transport behavior).
+- Hosts address devices explicitly (`device_uid`) or implicitly (the hub's
+  ACTIVE selection); the BlackPixel routes default to ACTIVE, which keeps
+  every historic single-camera call working unchanged.
+- A tiny window exists between a manager's connect and the hub's uid
+  finalization for identical-body suffixing; captures cannot occur in it
+  (no user-visible trigger path exists before connect returns).
+
+
+## FILE: docs/adr/0009_webcam_identity_by_unique_id.md
+
+# ADR 0009: Webcam identity by uniqueID (native AVFoundation capture)
+
+Status: accepted (2026-07-12)
+Amends: ADR 0006 (webcam id scheme and naming portions)
+
+## Context: the inversion
+
+The original webcam family mapped device NAMES from `ffmpeg -f avfoundation
+-list_devices` positionally onto `cv2.VideoCapture(index)` — two different
+enumerators, consulted at two different times. On 2026-07-12 the mapping
+INVERTED on the owner's machine: the row labeled "MacBook Pro Camera"
+streamed the iPhone and vice versa. Continuity cameras join and leave the
+AVFoundation device set dynamically; any positional join between
+enumerators rots silently.
+
+Load-bearing measurements from the live broken state:
+
+- OpenCV 4.13 enumerates with the LEGACY API (`devicesWithMediaType:` —
+  cap_avfoundation_mac.mm:358), muxed devices appended after video.
+- Post-open verification is IMPOSSIBLE: `isInUseByAnotherApplication()`
+  reads False even while another process actively holds the device.
+- This macOS reports the Continuity iPhone's `deviceType` as plain
+  `"AVCaptureDeviceTypeExternal"` (not the Continuity type), and
+  `hasTorch()` False for it (the torch cannot serve as an identity oracle).
+- A DiscoverySession with builtin/external/continuity type filters MISSED
+  the iPhone entirely under this PyObjC version's constants.
+
+## Decision (adversarial review: 2 designs + adjudication)
+
+Design A (same-enumerator index resolution, keep OpenCV capture) was
+rejected: its correctness would ride an unversioned private detail of
+opencv-python, and its residual failure (device-set churn inside the open
+bracket) fails WRONG (silently wrong stream). The elected Design B removes
+the index space entirely:
+
+1. **Ids are device identities**: `webcam:<AVCaptureDevice uniqueID>`.
+   Names come from `localizedName()` on the SAME object —
+   `name_confidence: "reported"`. Old positional ids refuse loudly.
+2. **Capture is native AVFoundation, opened by uniqueID**
+   (`drivers/avf_capture.py`): `deviceWithUniqueID_` →
+   `AVCaptureDeviceInput` → `AVCaptureSession` + `AVCaptureVideoDataOutput`
+   (BGRA) → delegate on a private serial dispatch queue → one strided copy
+   per frame into numpy under a single Condition. OpenCV remains for JPEG
+   encoding only. The delegate takes ONE lock and never calls session
+   methods; lifecycle is worker-thread-only (stopRunning on the delegate
+   queue is the classic AVF deadlock, excluded by construction).
+3. **Kind classification is structured-first**: isContinuityCamera
+   selector → deviceType sets → modelID prefix → name heuristics LAST.
+4. **Resolutions are device-reported** (`formats` → dimensions, landscape
+   video formats, ∩ familiar ladder + native; switched via activeFormat,
+   confirmed on the actual stream) — replaces probe-by-trial.
+5. **TCC is diagnosed deterministically** (authorizationStatus pre-check)
+   instead of being inferred from a mute frame timeout.
+6. `read_serial()` returns the uniqueID: the hub's identical-label
+   disambiguation becomes stable across reconnects.
+
+Every residual failure mode fails CLOSED (refusal, honest disconnect) —
+never a silently wrong stream. Remaining wrong-LABEL paths are macOS-side
+(two devices with identical localizedNames: streams stay correct, the
+picker is ambiguous).
+
+## Validation
+
+`scripts/validate_webcam_identity.py` on the previously-inverted machine:
+11/11 — uniqueID ids, reported names, structured kinds, both webcams
+streaming concurrently, and the cross-wiring oracle (different resolutions
+commanded per label; each SOF-confirmed stream followed its OWN command).
+Full suite 152 green with the FakeFrameSource seam (pure numpy, no PyObjC,
+CI-safe). The physical label↔scene binding was human-confirmed in the app.
+
+## Consequences
+
+- New macOS deps (base): pyobjc-framework-AVFoundation / Quartz /
+  libdispatch. Hosts bundling with PyInstaller add them to hiddenimports.
+- ffmpeg is no longer consulted for anything (enumeration deleted).
+- The fake seam changed from FakeVideoCapture (cv2 double) to
+  FakeFrameSource (frame-source double) — same scripted behaviors, plus
+  real frame pacing (a fantasy frame rate distorted ring arithmetic).
+- Non-macOS: the driver reports honest absence exactly as before.
+
+
+## FILE: docs/adr/0010_dwarf_network_family_and_mount_actions.md
+
+# ADR 0010 — DWARF network family: a smart telescope is a camera plus a mount
+
+Date: 2026-07-14 · Status: accepted
+
+## Context
+
+The DWARF 3 smart telescope is a Wi-Fi device: protobuf commands over a
+WebSocket (port 9900, one MASTER controller at a time), RTSP live view,
+captures landing in an on-device album (microSD) served over HTTP, and an
+alt-az mount with GOTO/joystick/calibration. It is the first camera in
+this package that (a) lives on the network rather than on USB/AVFoundation
+and (b) has controllable degrees of freedom beyond the sensor.
+
+## Decision
+
+1. **The session protocol absorbs the network transport unchanged**
+   (ADR 0001). `DwarfSession` maps: RTSP frames -> `capture_preview()`;
+   the PHOTOGRAPH command -> `trigger_capture()`; album polling -> a
+   `GP_EVENT_FILE_ADDED` whose `(folder, name)` is the album `filePath`;
+   HTTP download -> `file_get`. The manager, hub, detection, sequences and
+   BlackPixel all drive the telescope with zero new concepts.
+
+2. **The mount rides the ACTION channel as FAMILY ACTIONS.** Actions
+   already had exactly the right contract for motion (one-shot, never
+   cached, never replayed — replaying a cached slew on reconnect would
+   physically move the telescope). `CameraAdapter.family_action_names()`
+   (default `()`) extends the accepted action vocabulary per family;
+   the DWARF adds `gotoradec`, `gotosolar`, `stopgoto`, `calibrate`,
+   `joystick`, `joystickstop`, and maps the canonical focus actions to the
+   device's astro/manual focus. GOTO/calibration progress arrives through
+   the device's own state notifications, forwarded between preview frames
+   (`poll_session_events`, a no-op for families that only speak around
+   captures) into the catch log.
+
+3. **Discovery is configured, never scanned** (ADR 0006 applied to a
+   network transport). `list_cameras()` lists exactly the hosts named by
+   `ABSTRACTCAMERA_DWARF_HOSTS`; no subnet sweeps or TCP probes ride the
+   library's list path. `scripts/validate_dwarf.py` is the deliberate
+   scanning tool. A DWARF entry is never the default camera (connecting a
+   telescope is a choice, like a Continuity iPhone).
+
+4. **The protocol layer is implemented from DwarfLab's PUBLISHED API v2
+   spec** with a minimal vendored proto3 codec (`drivers/dwarf_wire.py`).
+   The known community bridges are GPL-licensed and cannot be linked from
+   this MIT package; the wire format itself is a published interface. The
+   only new dependency is `websocket-client` behind the `dwarf` extra
+   (ADR 0003: transports are extras; frame processing stays in base).
+
+5. **Master-lock honesty.** The DWARF grants one controller. `init()`
+   requests the master lock and REFUSES with actionable text when the
+   device answers slave (close the DWARFLAB app) — a session that
+   silently ran as an observer would break every write path downstream
+   while looking connected.
+
+## Consequences
+
+- Capture latency is honest: shutter -> album entry -> Wi-Fi download
+  takes seconds; capture windows say so (`expect_file_within_s` ≈
+  exposure + 30s) and the no-file note names the microSD/Wi-Fi.
+- Exposure/gain dials carry the device's OWN gear tables (fetched from
+  `/getDefaultParamsConfig`); no fabricated ranges (ADR 0004). Values
+  parse as shutter speeds, so the intervalometer validation rides
+  `nominal_exposure_s` unchanged.
+- The wide-angle lens and the astro live-stacking pipeline are NOT piloted
+  in v1; the capability notes say so explicitly.
+- Hardware validation: `scripts/validate_dwarf.py` (mount motion strictly
+  opt-in via flags; the default run is read-only plus one photo).
+
+
 ## FILE: CHANGELOG.md
 
 # Changelog
 
 ## Unreleased
 
+- **DWARF smart telescopes (new `dwarf` family, ADR 0010).** A DWARF 3 is
+  piloted over Wi-Fi through the existing abstraction: RTSP live view,
+  exposure/gain dials carrying the device's OWN gear tables, IR-cut filter
+  positions, stills/burst/movie landing in the device album (microSD) and
+  downloading over HTTP, battery/temperature telemetry. The MOUNT is
+  exposed as family actions on the one-shot action channel (never cached,
+  never replayed): `gotoradec` (RA/Dec degrees, J2000), `gotosolar`,
+  `stopgoto`, `calibrate`, `joystick`/`joystickstop`; the canonical focus
+  actions map to the astro autofocus and single-step focus. GOTO/
+  calibration/tracking progress arrives in the catch log as the device's
+  own state notifications. Master-lock honesty: connect() refuses with
+  actionable text when the DWARFLAB app holds control. Protocol implemented
+  from DwarfLab's published API v2 spec (vendored minimal proto3 codec —
+  the GPL community bridges are not linked); `websocket-client` is the one
+  new dependency behind the `dwarf` extra. Discovery is configured, never
+  scanned (`ABSTRACTCAMERA_DWARF_HOSTS`); `scripts/validate_dwarf.py` is
+  the active-discovery + hardware validation tool (mount motion opt-in).
+- **Adapters can extend the action vocabulary** —
+  `CameraAdapter.family_action_names()` (default empty) adds family
+  actions to `request_action`/`status()["actions"]`, and
+  `poll_session_events()` (default no-op) lets spontaneous-speaking
+  devices (telescope state notifications) surface events between preview
+  frames. Catch-log action events now carry `reason: "action"` (was
+  `"focus"` — the channel outgrew focus drives).
 - **`CameraHub.annotate_entries(entries)`** — the live-state annotation of
   discovery entries (connected / device_uid / active) split out of
   `list_cameras()`, so callers that cache the expensive USB probe (gphoto2

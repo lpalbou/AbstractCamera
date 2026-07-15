@@ -54,17 +54,22 @@ gphoto2 = ["gphoto2>=2.5.10"]
 clips = ["av>=12.0"]
 # Embedded-JPEG thumbnails for RAW captures (NEF/ARW/...) in the catch log.
 raw = ["rawpy>=0.19"]
+# DWARF smart telescopes: control plane is protobuf over WebSocket (the
+# protobuf layer is a vendored minimal codec; only the ws client is a dep).
+dwarf = ["websocket-client>=1.7"]
 test = ["pytest>=7.0.0"]
 docs = ["mkdocs>=1.5", "mkdocs-material>=9.0"]
 all = [
   "gphoto2>=2.5.10",
   "av>=12.0",
   "rawpy>=0.19",
+  "websocket-client>=1.7",
 ]
 dev = [
   "gphoto2>=2.5.10",
   "av>=12.0",
   "rawpy>=0.19",
+  "websocket-client>=1.7",
   "pytest>=7.0.0",
   "ruff>=0.5.7",
   "black>=23.0.0",

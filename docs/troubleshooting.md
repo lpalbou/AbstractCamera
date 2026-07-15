@@ -59,6 +59,33 @@ The ring holds the RECENT contiguous span only; stale frames from an
 earlier phase don't count (that lie was found and fixed on hardware). Wait
 for `status()["rolling"]["buffered_s"]` to reach ~2s.
 
+**`Could not reach the DWARF at <ip>:9900`**
+The telescope is not on this network (or asleep). AP mode: join the
+DWARF's own Wi-Fi — the device is always `192.168.88.1`. STA mode: connect
+the DWARF to your router in the DWARFLAB app (Connection Settings shows
+its IP) and export `ABSTRACTCAMERA_DWARF_HOSTS=<that ip>`. Discovery
+sweep: `python3 scripts/validate_dwarf.py` probes the local /24 for the
+control port (the library itself never scans).
+
+**`The DWARF granted only observer access`**
+The device allows ONE master controller and the DWARFLAB app currently
+holds it. Close the app (or release control in it) and reconnect. The
+refusal is deliberate: a session without the master lock looks connected
+but every write would fail downstream.
+
+**DWARF connects but `no file appeared in the DWARF's album`**
+Captures land on the telescope's microSD first: no card (or a full one)
+means no file — the DWARF's own error codes surface in the catch log
+(`no SD card is present`, `writing ... failed`). Slow Wi-Fi can also push
+the album entry past the announce window; the file still lands in the
+album and downloads on the next capture's poll.
+
+**DWARF GOTO fails immediately**
+`GOTO failed (target below horizon or plate solving failed)` is the
+device's own refusal. Run `request_action("calibrate")` once under open
+sky first (`no GOTO has run yet` names the same gap), check the target is
+above the horizon, and mind the mount limit warnings in the catch log.
+
 **Simulated camera in tests without env vars**
 `CameraManager(driver=FakeDriver(abstractcamera.sim.gphoto2))` — the
 injection seam used by the package's own suites.
