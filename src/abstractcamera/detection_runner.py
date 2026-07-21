@@ -126,10 +126,15 @@ class DetectionRunnerMixin:
         # After an auto-fire the thumbnail encode is skipped: the next loop
         # iteration should be pulling the next preview frame, not encoding
         # base64 for the log (monitor mode keeps thumbnails).
+        # The detector's structured metrics (bbox/centroid/speed/duration —
+        # detection.py rounds them JSON-safe) ride the event verbatim:
+        # consumers used to have to re-parse the prose note to learn WHERE
+        # in the frame something moved (adversarial finding 2026-07-21).
         self._append_event(kind="detection", reason=event.kind, note=note,
                            score=event.score,
                            thumbnail_jpeg=None if fired else jpeg,
-                           path=clip_path)
+                           path=clip_path,
+                           metrics=dict(event.metrics) if event.metrics else None)
 
     def _run_detection(
         self,
@@ -193,6 +198,8 @@ class DetectionRunnerMixin:
                 note=f"mean {mean_value:.1f} vs baseline {baseline:.1f}",
                 score=score,
                 thumbnail_jpeg=None if fired else jpeg,
+                metrics={"mean": round(mean_value, 1), "baseline": round(baseline, 1),
+                         "p99": round(p99, 1)},
             )
 
         # Only quiet frames feed the baseline so a long flash cannot poison it.

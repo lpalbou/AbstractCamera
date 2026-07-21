@@ -32,9 +32,10 @@ No — and that is the device's design, not a package gap (measured
 MASS-STORAGE gadget exposing the microSD (volume "U盘", exFAT — the full
 album tree: `Normal_Photos/`, `Astronomy/` FITS subs + calibration
 frames, `Videos/`, `Panoramas/`). That is a fast bulk-import path for
-captures, and nothing more: no serial endpoint, no USB network interface,
-no control plane. Piloting (live view, dials, capture, mount) is
-Wi-Fi-only — see the next question.
+captures — `abstractcamera download` copies it all (and `--delete` frees
+the card after verified copies) — and nothing more: no serial endpoint,
+no USB network interface, no control plane. Piloting (live view, dials,
+capture, mount) is Wi-Fi-only — see the next question.
 
 **Can I steer the DWARF's mount from here?**
 

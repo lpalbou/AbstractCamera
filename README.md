@@ -50,7 +50,29 @@ per-device capture folders under `~/Pictures/<device>/`.
   [`sim/gphoto2.py`](src/abstractcamera/sim/gphoto2.py) with Nikon Z6 II and
   Sony A7R IV personalities reproducing hardware-measured quirks
   (`ABSTRACTCAMERA_FAKE=1`).
-- A CLI for manual checks: `abstractcamera list` / `abstractcamera preview`.
+- Device media downloads, one abstraction across devices (ADR 0011):
+  `abstractcamera download` copies ALL media a device holds into
+  `~/Pictures/<device>/` — USB-mounted cards (auto-detected by album
+  signature) or the DWARF album over Wi-Fi (`--host`); `--delete` frees
+  the device after size-verified copies (protected device state like the
+  DWARF's dark library always stays). Per-device `MediaStore` adapters
+  ride one sync engine that owns all safety rules; PTP-card stores
+  (Sony/Nikon) are the named next adapters.
+- A CLI for manual checks: `abstractcamera list` / `abstractcamera preview`
+  / `abstractcamera download`, and a standing sentinel: `abstractcamera
+  watch` forwards detection/capture events as durable AbstractGateway
+  events so parked workflows wake on movement instead of polling.
+- **AbstractCore integration (ADR 0012)**: installing abstractcamera beside
+  [AbstractCore](https://github.com/lpalbou/abstractcore) auto-registers the
+  `camera` capability (entry point `abstractcore.capabilities_plugins`) —
+  open/close cameras, capture photos and bounded video clips, arm
+  motion/lightning/meteor detection with auto-capture — plus an explicit AI
+  tool set: `from abstractcamera.integrations.abstractcore_tools import
+  camera_tools` then `llm.generate("Take a photo if something moves",
+  tools=camera_tools())`. Eleven `camera_*` tools (including
+  `camera_preview_photo` — look without firing the shutter) ship with a
+  classification map (`captures_environment` is the privacy fact approval
+  layers key on).
 
 ## Install
 

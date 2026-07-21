@@ -15,6 +15,9 @@ DOCS = [
     "docs/adr/0008_multi_camera_hub_and_capture_layout.md",
     "docs/adr/0009_webcam_identity_by_unique_id.md",
     "docs/adr/0010_dwarf_network_family_and_mount_actions.md",
+    "docs/adr/0011_device_media_stores_one_sync_engine.md",
+    "docs/adr/0012_abstractcore_capability_plugin.md",
+    "docs/adr/0013_event_wire_contract_and_gateway_sentinel.md",
     "CHANGELOG.md",
 ]
 

@@ -26,6 +26,14 @@ class CaptureOpsMixin:
             # would report every Nikon frame "late" by one exposure.
             with self._state_lock:
                 cache_snapshot = dict(self._config_cache)
+                # A sequence frame is a trigger ACT like any other
+                # (adversarial P2, 2026-07-21: unnumbered sequence shots
+                # left every frame's file stamped with the LAST manual
+                # act's id — a 100-frame timelapse claimed 100 files for
+                # one old trigger). Each frame gets its own seq, so its
+                # files correlate correctly.
+                self._trigger_seq += 1
+                trigger_id = self._trigger_seq
             timing = self._adapter.fire_single(camera, sequence.exposure_s, cache_snapshot)
             fired_at = timing.issued_at
             with self._state_lock:
@@ -47,7 +55,8 @@ class CaptureOpsMixin:
             })
             total = sequence.count if sequence.count else "∞"
             self._append_event(kind="trigger", reason="interval",
-                               note=f"frame {record.index}/{total} ({timing.command_ms}ms)")
+                               note=f"frame {record.index}/{total} ({timing.command_ms}ms)",
+                               trigger_id=trigger_id)
         except Exception as exc:
             with self._state_lock:
                 record = sequence.record_failed(str(exc))
@@ -60,7 +69,8 @@ class CaptureOpsMixin:
             diagnosis = self._adapter.diagnose_trigger_failure(camera, str(exc))
             self._append_event(kind="error", reason="interval",
                                note=f"frame {shot_index} trigger failed: {exc}"
-                                    + (f" — {diagnosis}" if diagnosis else ""))
+                                    + (f" — {diagnosis}" if diagnosis else ""),
+                               trigger_id=trigger_id)
         if not sequence.is_active:
             self._finish_sequence(
                 sequence,
@@ -160,8 +170,15 @@ class CaptureOpsMixin:
             return 0.0
 
     def _fire_trigger(self, camera, *, reason: str, score: float | None = None) -> None:
+        # Every trigger ACT gets a sequence number BEFORE the hardware fires
+        # (wire-contract 2026-07-21): file events are stamped with the seq
+        # current at announce time, so capture waits can reject files that
+        # belong to an earlier act (flushing backlog misattribution class).
+        with self._state_lock:
+            self._trigger_seq += 1
+            trigger_id = self._trigger_seq
         if self._capture_mode == "video":
-            self._toggle_movie_recording(camera, reason=reason)
+            self._toggle_movie_recording(camera, reason=reason, trigger_id=trigger_id)
             return
         try:
             # Captured files announce themselves via camera events AFTER the
@@ -184,15 +201,18 @@ class CaptureOpsMixin:
                 reason=reason,
                 note=f"{label} command {timing.command_ms}ms",
                 score=score,
+                trigger_id=trigger_id,
             )
         except Exception as exc:
             diagnosis = self._adapter.diagnose_trigger_failure(camera, str(exc))
             detail = f"{exc}" + (f" — {diagnosis}" if diagnosis else "")
             with self._state_lock:
                 self._last_error = f"Trigger failed: {detail}"
-            self._append_event(kind="error", reason=reason, note=f"trigger failed: {detail}")
+            self._append_event(kind="error", reason=reason,
+                               note=f"trigger failed: {detail}", trigger_id=trigger_id)
 
-    def _toggle_movie_recording(self, camera, *, reason: str) -> None:
+    def _toggle_movie_recording(self, camera, *, reason: str,
+                                trigger_id: int | None = None) -> None:
         start = not self._movie_recording
         receipt = self._adapter.toggle_movie(camera, start)
 
@@ -202,7 +222,8 @@ class CaptureOpsMixin:
             with self._state_lock:
                 self._last_error = f"Movie start refused by the camera: {receipt.error}"
             self._append_event(kind="error", reason=reason,
-                               note=f"video start refused: {receipt.error}")
+                               note=f"video start refused: {receipt.error}",
+                               trigger_id=trigger_id)
             return
 
         if receipt.ok:
@@ -210,7 +231,8 @@ class CaptureOpsMixin:
                 self._movie_recording = receipt.recording
             self._append_event(kind="trigger", reason=reason,
                                note=receipt.note or ("video recording started" if start
-                                                     else "video recording stopped"))
+                                                     else "video recording stopped"),
+                               trigger_id=trigger_id)
             if receipt.drain_window_s > 0:
                 self._event_drain_until = max(
                     self._event_drain_until, time.time() + receipt.drain_window_s)
@@ -224,6 +246,7 @@ class CaptureOpsMixin:
             kind="error",
             reason=reason,
             note=f"video {'start' if start else 'stop'} failed: {detail}" + receipt.hint,
+            trigger_id=trigger_id,
         )
         if receipt.probe_session:
             # Wedge recovery (hardware-observed): a failed movie toggle can

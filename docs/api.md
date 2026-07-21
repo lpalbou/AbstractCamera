@@ -1,5 +1,25 @@
 # API reference
 
+## AbstractCore integration (ADR 0012)
+
+Installing abstractcamera beside abstractcore registers the `camera`
+capability automatically (entry point group
+`abstractcore.capabilities_plugins`, backend id `abstractcamera:hub`).
+
+| Surface | Contract |
+| --- | --- |
+| `abstractcamera.service.CameraService` | Synchronous dict-in/dict-out ops over a `CameraHub`: `list_cameras/open/close/close_all/status/preview_frame/preview_photo/capture_photo/capture_video/stop_recording/start_detection/stop_detection/get_events`. Every result carries `success`; failures carry actionable `error` text and NEVER raise on bad input. Capture waits watch the event log from a pre-trigger watermark with bounded timeouts (`timed_out: true` sentinel) and skip stale-stamped backlog files (`trigger_id` correlation); everything that writes capture mode or triggers holds a per-camera capture lock (concurrent captures refuse honestly; `stop_recording` is the escape hatch for recordings started by detection auto-fire). Under armed auto-fire, `capture_photo` returns an honest DEFERRED success (downloads land at disarm). `open()` is idempotent AND serialized (concurrent opens join the in-flight claim instead of double-claiming the device); re-opens after an unplug reap the dead session and reuse its uid. `preview_photo` saves the current live-view frame (no shutter). `get_events` responses carry the wire contract: `session` (id-space epoch; new value = reconnect, reset cursors), `evicted`/`first_retained_id` (bounded-log gap signal), per-event `trigger_id` + detection `metrics`. `get_shared_service()` is the process-wide instance both integration surfaces use; it honors `ABSTRACTCAMERA_CAPTURE_ROOT` and registers an atexit that releases cameras (flushing downloads) on clean process exit. |
+| `integrations.abstractcore_plugin` | The capability plugin (`register(registry)`); import-light — the camera stack (OpenCV) loads on first USE, never at plugin/registry load. Capability methods raise `CameraControlError` on failure (core convention) and return JSON-safe dicts (core ruling c3168). `capture_photo`/`capture_video`/`stop_recording` return paths by default, add base64 content (`data_b64`, capped 64MB — use the artifact store beyond) with `include_bytes=True`, and store `{"$artifact": ...}` refs when `artifact_store=` is provided; `preview_frame` returns JPEG bytes as the return value (the one documented exception to the dict rule) or an artifact ref. Catalog routes: `available_providers()` (full transport records, derived from live driver resolution), `list_models()` (devices), `list_operations()`. Note: the camera hub is process-shared — the LAST configured `camera_capture_root` wins for newly opened cameras across every consumer in the process. |
+| `integrations.abstractcore_tools` | Eleven explicit `camera_*` tools for LLM tool calling: `camera_list_devices`, `camera_open`, `camera_close`, `camera_status`, `camera_preview_photo` (look without shooting — live-view frame, no shutter), `camera_capture_photo`, `camera_capture_video`, `camera_stop_recording`, `camera_start_detection`, `camera_stop_detection`, `camera_get_events`. Accessors: `camera_tools()` (callables for `generate(tools=...)`), `camera_tool_definitions()` (ToolDefinitions), `camera_tool_specs()` (flat dicts). `CAMERA_TOOL_CLASSIFICATION` declares `mutating`/`remote_write_capable`/`captures_environment` per tool, exhaustively. `camera_tool_approval_defaults()` derives host approval defaults from the classification (auto-approve only when every fact is false — today `camera_list_devices`/`camera_status`/`camera_get_events`; every `captures_environment` tool defaults to require-approval, user-overridable through host policy per the operator ruling — a default, not a floor): the consumption surface for AbstractRuntime's `ToolApprovalPolicy` (backlog 0012). |
+| `gateway_bridge` + `abstractcamera watch` | The sentinel lane (backlog 0016): a standalone process that opens a camera, arms detection, and forwards catch-log events as DURABLE AbstractGateway events (`POST /api/gateway/commands`, type=emit_event, global-scope mailbox) so parked workflows/entities wake on movement instead of polling. `GatewayEmitter` (stdlib HTTP, bearer from `--token`/`ABSTRACTGATEWAY_AUTH_TOKEN`), `CursorStore` (per camera+session cursors, atomic writes), `CameraEventBridge` (kind-filtered poll loop; at-least-once toward the gateway, exactly-once past its command store via derived command ids; cursors hold on gateway failure). CLI: `abstractcamera watch --gateway URL --mailbox camera --detect motion --action photo`. |
+
+Detection actions: `action="photo"` auto-fires a still per detection
+(cooldown-gated); `action="video"` starts recording on the first detection
+and stops it on a later one; `action="monitor"` only logs. Targets:
+`motion`, `lightning`, `meteor`. `camera_get_events(since_id=...)` is the
+polling surface (`event_watermark` from `camera_start_detection` is the
+starting cursor).
+
 ## Module surface
 
 ```python
@@ -11,9 +31,28 @@ from abstractcamera import (
     is_tethering_available,  # gphoto2-shaped transport resolves (PTP-only meaning)
     get_default_manager,     # process-wide instance + atexit release
     parse_jpeg_dimensions,   # JPEG SOF probe (no decode)
+    sync_store,              # download ALL device media (ADR 0011); SyncReport out
+    FilesystemMediaStore,    # media store: USB-mounted card (CardLayout-driven)
+    DwarfAlbumMediaStore,    # media store: the DWARF album over Wi-Fi
+    find_card_volumes,       # mounted cards by album signature (never volume label)
+    MediaEntry, SyncReport,
     ACTION_WIDGET_NAMES, CONFIG_WIDGET_NAMES,
 )
 ```
+
+## Device media downloads (`abstractcamera download`, ADR 0011)
+
+| Surface | Contract |
+| --- | --- |
+| `sync_store(store, dest=None, *, delete=False, delete_protected=False, dry_run=False, log=print)` | Downloads every media file `store` lists into `dest` (default `~/Pictures/<store.device_slug>/`), size-verified and incremental — `protected` entries (the device calibration library) are always DOWNLOADED. With `delete`, removes device copies that verify locally AT DELETE TIME; protected entries survive unless `delete_protected` (CLI: `--delete-calibrations`) opts in; unverifiable entries never delete. Returns a `SyncReport` (copied/skipped/deleted/deleted_protected/protected/failures). |
+| `FilesystemMediaStore(root, layout=DWARF_CARD_LAYOUT)` | Any mounted device card. `CardLayout` declares the album dirs, protected subtrees, and the local slug — adding a device's card is a declaration, not code. |
+| `DwarfAlbumMediaStore(host)` | The DWARF album over Wi-Fi: REST index, streamed downloads, `/album/delete`. |
+| `find_card_volumes()` | `(mount_point, layout)` for volumes matching a known card signature under `/Volumes`. |
+
+A MediaStore adapter is ~6 methods (`list_media`/`fetch`/`delete`/
+`finalize_delete`/`describe`/`validate` + `device_slug`, `can_delete`) —
+the sync engine owns all safety rules, so new devices (PTP cards over
+libgphoto2 are next) inherit them unchanged.
 
 ## CameraHub (multi-camera hosts)
 

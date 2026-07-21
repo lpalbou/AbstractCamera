@@ -28,6 +28,15 @@ from abstractcamera.errors import CameraControlError
 class CameraHub:
     def __init__(self, capture_root: str | None = None, manager_factory=None):
         self._lock = threading.Lock()
+        # Serializes the whole check→create→connect→register window of
+        # connect(): the check ran under _lock but the hardware claim ran
+        # outside it, so two concurrent opens both passed the check and
+        # double-claimed one physical device — which wedges PTP transports
+        # (adversarial finding 2026-07-21, reproduced on the simulator).
+        # Held only by connect(); a 20s hardware connect therefore delays a
+        # concurrent open of ANOTHER camera by up to that much — accepted:
+        # opens are rare and correctness beats parallel-open latency.
+        self._connect_lock = threading.Lock()
         self._managers: dict[str, CameraManager] = {}
         self._active_uid: str | None = None
         self._capture_root = capture_root
@@ -94,31 +103,81 @@ class CameraHub:
     def connect(self, camera_id: str | None = None) -> dict:
         """Connect a camera (default resolution rules apply when camera_id is
         None) and make it the ACTIVE one. Reconnecting an already-live
-        camera_id returns its existing session."""
-        with self._lock:
-            for uid, manager in self._managers.items():
-                status = manager.status()
-                if status["connected"] and camera_id is not None \
-                        and status["camera_id"] == camera_id:
-                    self._active_uid = uid
-                    status["device_uid"] = uid
-                    status["active"] = True
-                    return status
+        camera_id returns its existing session. Opening ADDITIONAL cameras
+        requires their EXPLICIT discovery ids: default resolution has no
+        "next unclaimed device" notion, so chained bare connect() calls can
+        claim the SAME physical device twice (which wedges PTP transports —
+        adversarial P2 2026-07-21). Agent-facing default idempotency lives
+        in CameraService.open (the layer that owns agent semantics).
 
-        manager = self._manager_factory()
-        if self._capture_root:
-            manager.set_capture_root(self._capture_root)
-        if self._frame_analyzer is not None:
-            manager.set_frame_analyzer(self._frame_analyzer)
-        manager.connect(camera_id)
+        The whole check→create→connect→register window holds the connect
+        mutex, so a concurrent connect of the SAME camera_id waits and then
+        joins the first session instead of double-claiming the device.
+        """
+        with self._connect_lock:
+            with self._lock:
+                # Reap watchdog-dead managers FIRST: a corpse squatting on
+                # its uid made every re-open after an unplug mint a suffixed
+                # uid (nikon_z_6ii_2, _3, ...) — splitting the capture folder
+                # and invalidating the device uid agents stored (adversarial
+                # finding 2026-07-21).
+                corpses = self._reap_dead_locked()
+                existing = self._existing_session_locked(camera_id)
+            for corpse in corpses:
+                try:
+                    # Joins the already-dead worker (instant) and clears
+                    # frame/ring state; the registry entry is already gone.
+                    corpse.disconnect()
+                except Exception:
+                    pass
+            if existing is not None:
+                return existing
 
-        with self._lock:
-            uid = self._register_locked(manager)
-            self._active_uid = uid
+            manager = self._manager_factory()
+            if self._capture_root:
+                manager.set_capture_root(self._capture_root)
+            if self._frame_analyzer is not None:
+                manager.set_frame_analyzer(self._frame_analyzer)
+            manager.connect(camera_id)
+
+            with self._lock:
+                uid = self._register_locked(manager)
+                self._active_uid = uid
         status = manager.status()
         status["device_uid"] = uid
         status["active"] = True
         return status
+
+    def _existing_session_locked(self, camera_id: str | None) -> dict | None:
+        """The live session already holding this EXPLICIT camera_id, or None.
+        Default connects (None) never match — see connect()'s contract."""
+        if camera_id is None:
+            return None
+        for uid, manager in self._managers.items():
+            status = manager.status()
+            if status["connected"] and status["camera_id"] == camera_id:
+                self._active_uid = uid
+                status["device_uid"] = uid
+                status["active"] = True
+                return status
+        return None
+
+    def _reap_dead_locked(self) -> list[CameraManager]:
+        """Pop managers whose worker died without a disconnect() (unplug →
+        liveness watchdog, worker crash) so their uid — and therefore the
+        capture folder — is free again. Returns the corpses for cleanup
+        OUTSIDE self._lock (disconnect() joins the worker thread; holding
+        the registry lock across a join would block every status reader).
+        Corpses only accumulate between connects (one per unplug); every
+        connect sweeps them."""
+        dead = [uid for uid, manager in self._managers.items()
+                if not manager.status()["connected"]]
+        corpses: list[CameraManager] = []
+        for uid in dead:
+            corpses.append(self._managers.pop(uid))
+            if self._active_uid == uid:
+                self._active_uid = next(iter(self._managers), None)
+        return corpses
 
     def _register_locked(self, manager: CameraManager) -> str:
         """Final device uid: the manager's slug, suffixed by serial tail or
@@ -145,9 +204,17 @@ class CameraHub:
             uid = device_uid or self._active_uid
             manager = self._managers.get(uid) if uid else None
         if manager is None:
+            # Name the id SPACE in the refusal: the predictable mistake is
+            # addressing a live camera by its DISCOVERY id — "refresh the
+            # list" sent callers in a loop while the fix was using the
+            # device uid (adversarial finding 2026-07-19).
             raise CameraControlError(
                 "No camera is connected." if device_uid is None
-                else f"No connected camera has id '{device_uid}' — refresh the list."
+                else (
+                    f"No live camera has device uid '{device_uid}' — address live "
+                    "cameras by the device_uid returned by connect()/statuses() "
+                    "(discovery ids from list_cameras() are only for connecting)."
+                )
             )
         return manager
 

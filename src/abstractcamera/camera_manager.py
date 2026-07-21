@@ -14,6 +14,7 @@ import base64
 import os
 import threading
 import time
+import uuid
 from collections import deque
 from typing import Any
 
@@ -113,6 +114,19 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         self._measured_fps = 0.0
         self._events: deque[dict] = deque(maxlen=CATCH_LOG_MAX_EVENTS)
         self._event_counter = 0
+        # Event-log WIRE CONTRACT fields (adversarial finding 2026-07-21 —
+        # LLM/workflow consumers poll get_events as an API):
+        # - session epoch: event ids restart when a manager reconnects (and a
+        #   hub re-open mints a whole new manager), so a stored since_id
+        #   cursor silently hid the new session's events. The epoch names the
+        #   id space; consumers reset their cursor when it changes.
+        # - trigger seq: monotonically counts trigger ACTS (manual, auto-fire,
+        #   movie toggles). File events are stamped with the seq current at
+        #   announce time, so capture waits can reject stale backlog files
+        #   (a flushing deferred download used to be claimable as a fresh
+        #   capture's result).
+        self._session_epoch = uuid.uuid4().hex[:12]
+        self._trigger_seq = 0
         self._last_error: str | None = None
         self._last_trigger_at = 0.0
         self._last_detection_at = 0.0
@@ -136,7 +150,7 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         # the 1-3s file_get is deferred — a download on the sole gphoto2
         # thread blinded detection for seconds after every shot ("the auto
         # fire pauses", owner). capturetarget=Card makes deferral lossless.
-        self._pending_downloads: deque[tuple[str, str, float]] = deque()  # (folder, name, announced_at)
+        self._pending_downloads: deque[tuple[str, str, float, int | None]] = deque()  # (folder, name, announced_at, trigger_id)
         self._pending_download_keys: set[tuple[str, str]] = set()
         self._downloads_pending = 0
         self._download_flush_requested = threading.Event()
@@ -257,6 +271,21 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         with self._state_lock:
             self._driver = driver
             self._camera_id = camera_id
+            # New session, new id space — and the id space must actually be
+            # NEW (adversarial P1, 2026-07-21): re-minting the epoch while
+            # keeping old events made the contract lie on the direct-manager
+            # reconnect path (hub re-opens build fresh managers, but
+            # get_default_manager()/host-held managers reconnect in place):
+            # consumers told to reset cursors on an epoch change would
+            # re-read the OLD session's events as new — and the gateway
+            # bridge would re-emit them under fresh command ids (the epoch
+            # is in the hash), double-waking listeners with history. The
+            # corpse log stays readable up to the moment a new session
+            # starts; then it belongs to the new epoch entirely.
+            self._events.clear()
+            self._event_counter = 0
+            self._trigger_seq = 0
+            self._session_epoch = uuid.uuid4().hex[:12]
         driver.prepare_connect(camera_id)
         self._stop_requested.clear()
         self._trigger_requested.clear()
@@ -548,6 +577,33 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         with self._state_lock:
             return [dict(event) for event in self._events if event["id"] > since_id]
 
+    def event_window(self) -> tuple[int | None, int | None, int]:
+        """(first_retained_id, last_retained_id, counter): the bounds of what
+        the ring still holds plus the high-water id ever minted. Consumers
+        detect EVICTION with it — the log is a bounded deque (~3 minutes
+        under busy auto-fire), and a since_id cursor older than
+        first_retained_id has silently missed events (adversarial finding
+        2026-07-21: pollers could not distinguish 'quiet' from 'evicted')."""
+        with self._state_lock:
+            if not self._events:
+                return None, None, self._event_counter
+            # _events is newest-first (appendleft).
+            return self._events[-1]["id"], self._events[0]["id"], self._event_counter
+
+    @property
+    def session_epoch(self) -> str:
+        with self._state_lock:
+            return self._session_epoch
+
+    @property
+    def trigger_seq(self) -> int:
+        """The last trigger act's sequence number (0 = never fired). Capture
+        waits snapshot this BEFORE requesting a trigger and then accept only
+        file events stamped >= snapshot+1 — stale backlog files carry older
+        seqs and can no longer be claimed as the fresh capture's result."""
+        with self._state_lock:
+            return self._trigger_seq
+
     def clear_events(self) -> None:
         with self._state_lock:
             self._events.clear()
@@ -597,6 +653,10 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
                 "burst_speed": self._burst_speed,
                 "movie_recording": self._movie_recording,
                 "event_count": len(self._events),
+                # Event-log cursor contract: ids are scoped to this session
+                # epoch (reconnects restart both; consumers reset cursors on
+                # an epoch change).
+                "session": self._session_epoch,
                 "last_error": self._last_error,
                 "config": dict(self._config_cache),
                 # The honest resolution signal: the size of frames ACTUALLY
@@ -664,6 +724,8 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
         score: float | None = None,
         thumbnail_jpeg: bytes | None = None,
         path: str | None = None,
+        trigger_id: int | None = None,
+        metrics: dict | None = None,
     ) -> None:
         thumbnail_data_url = None
         if thumbnail_jpeg is not None:
@@ -695,5 +757,11 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
                     "timestamp": time.time(),
                     "thumbnail": thumbnail_data_url,
                     "path": path,
+                    # Wire-contract fields (2026-07-21): which trigger act a
+                    # file event belongs to (None for events outside trigger
+                    # causality) + the detector's machine-readable metrics
+                    # (bbox/centroid/speed... — prose notes are for humans).
+                    "trigger_id": trigger_id,
+                    "metrics": metrics or None,
                 }
             )

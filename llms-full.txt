@@ -6,6 +6,8 @@ This repository's source of truth is the code under `src/abstractcamera/` (docs 
 
 Agent quickstart:
 - **Use the library**: `README.md` → `docs/getting-started.md` → `docs/api.md`. `pip install abstractcamera` (webcam+sim), extras: `[gphoto2]` (PTP), `[clips]` (MP4), `[raw]` (thumbnails), `[dwarf]` (smart telescopes over Wi-Fi). CLI: `abstractcamera list` / `abstractcamera preview`.
+- **Drive cameras from AbstractCore / an AI agent (ADR 0012)**: installing abstractcamera beside abstractcore auto-registers the `camera` capability (entry point `abstractcore.capabilities_plugins`, backend `abstractcamera:hub`); LLM tool set: `from abstractcamera.integrations.abstractcore_tools import camera_tools` → `generate(..., tools=camera_tools())` — eleven `camera_*` tools (open/close, preview-without-shutter, photo, bounded video, stop-recording, motion/lightning/meteor detection with auto-capture, event polling with session/eviction cursor contract) with a `CAMERA_TOOL_CLASSIFICATION` privacy/approval map (`captures_environment`). Synchronous operation layer: `abstractcamera.service.CameraService`.
+- **Wake workflows on movement (the sentinel lane)**: `abstractcamera watch --gateway URL --mailbox camera --detect motion` forwards detection/capture events as durable AbstractGateway events — parked workflows/entities declaring the mailbox wake instead of polling; exactly-once past the gateway command store, cursors survive restarts (`gateway_bridge.py`).
 - **Understand the design**: `docs/architecture.md` (manager / adapter / session layers, threading, hardware-scarred invariants), `docs/adr/` (10 decision records incl. the adversarial election of the session-protocol boundary, the multi-camera hub, and the DWARF network family).
 - **Add a camera family**: `docs/api.md` § Extending; adapters in `src/abstractcamera/adapters/`, sessions/drivers in `src/abstractcamera/drivers/`; conformance suite in `tests/test_session_protocol.py`; hardware validation required before support claims (ADR 0007/0008 discipline).
 - **Camera-less dev/CI**: `ABSTRACTCAMERA_FAKE=1` (all transports become the simulator); scenario scripting via `abstractcamera.sim.gphoto2.configure(profile="z6ii"|"a7r4", ...)`; test seam `CameraManager(driver=FakeDriver(module))`.
@@ -91,7 +93,29 @@ per-device capture folders under `~/Pictures/<device>/`.
   [`sim/gphoto2.py`](src/abstractcamera/sim/gphoto2.py) with Nikon Z6 II and
   Sony A7R IV personalities reproducing hardware-measured quirks
   (`ABSTRACTCAMERA_FAKE=1`).
-- A CLI for manual checks: `abstractcamera list` / `abstractcamera preview`.
+- Device media downloads, one abstraction across devices (ADR 0011):
+  `abstractcamera download` copies ALL media a device holds into
+  `~/Pictures/<device>/` — USB-mounted cards (auto-detected by album
+  signature) or the DWARF album over Wi-Fi (`--host`); `--delete` frees
+  the device after size-verified copies (protected device state like the
+  DWARF's dark library always stays). Per-device `MediaStore` adapters
+  ride one sync engine that owns all safety rules; PTP-card stores
+  (Sony/Nikon) are the named next adapters.
+- A CLI for manual checks: `abstractcamera list` / `abstractcamera preview`
+  / `abstractcamera download`, and a standing sentinel: `abstractcamera
+  watch` forwards detection/capture events as durable AbstractGateway
+  events so parked workflows wake on movement instead of polling.
+- **AbstractCore integration (ADR 0012)**: installing abstractcamera beside
+  [AbstractCore](https://github.com/lpalbou/abstractcore) auto-registers the
+  `camera` capability (entry point `abstractcore.capabilities_plugins`) —
+  open/close cameras, capture photos and bounded video clips, arm
+  motion/lightning/meteor detection with auto-capture — plus an explicit AI
+  tool set: `from abstractcamera.integrations.abstractcore_tools import
+  camera_tools` then `llm.generate("Take a photo if something moves",
+  tools=camera_tools())`. Eleven `camera_*` tools (including
+  `camera_preview_photo` — look without firing the shutter) ship with a
+  classification map (`captures_environment` is the privacy fact approval
+  layers key on).
 
 ## Install
 
@@ -257,6 +281,32 @@ time — close the DWARFLAB app (or release control there) or connect()
 refuses with exactly that message. Hardware smoke test:
 `python3 scripts/validate_dwarf.py` (mount motion strictly opt-in).
 
+## Download everything a device holds
+
+`abstractcamera download` is one operation across devices (ADR 0011):
+list the device's media, copy what is missing locally (size-verified,
+re-runs skip), and — only with `--delete` — free the device afterwards.
+
+```bash
+abstractcamera download                    # auto-detect a USB-mounted card -> ~/Pictures/<device>/
+abstractcamera download --host 192.168.1.57  # the DWARF album over Wi-Fi instead
+abstractcamera download --delete           # ... then free the device (verified copies only)
+abstractcamera download --delete --delete-calibrations  # also remove the darks/bias/flats
+abstractcamera download --dry-run --delete # show the whole plan, touch nothing
+```
+
+For the DWARF over USB-C, enable storage mode in the DWARFLAB app first
+(the microSD mounts as a USB volume; USB-C is files-only — piloting stays
+on Wi-Fi, above). The safety rules live in ONE engine for every device:
+`--delete` removes ONLY media whose local copy verified in size at delete
+time; the calibration library (`Astronomy/CALI_FRAME` — darks/bias/flats
+the device uses for stacking) is always DOWNLOADED but is deleted only
+with the explicit extra flag `--delete-calibrations` (the device would
+have to re-shoot darks); device system files always stay. In code:
+`sync_store(FilesystemMediaStore(...) | DwarfAlbumMediaStore(host), dest)`.
+PTP-card stores (Sony/Nikon bodies) are the named next adapters on the
+same engine.
+
 ## Live view, dials, capture
 
 ```python
@@ -327,6 +377,36 @@ manager.start_interval_sequence(interval_s=5.0, count=100, start_delay_s=10)
 manager.set_rolling_buffer(True, seconds=10)
 clip = manager.save_rolling_clip()      # "keep the last N seconds" -> MP4 ([clips])
 ```
+
+## Drive cameras from AbstractCore / an AI agent
+
+Installing abstractcamera beside `abstractcore` registers the `camera`
+capability automatically (ADR 0012 — nothing to configure). The tool set
+lets an LLM pilot cameras:
+
+```python
+from abstractcore import create_llm
+from abstractcamera.integrations.abstractcore_tools import camera_tools
+
+llm = create_llm("lmstudio", model="qwen/qwen3-4b")
+response = llm.generate(
+    "Open the default camera and take a photo when something moves.",
+    tools=camera_tools(),
+)
+```
+
+The eleven `camera_*` tools cover discovery, open/close, silent live-view
+preview (`camera_preview_photo` — look without firing the shutter), photo,
+bounded video, motion/lightning/meteor detection with auto-capture, and
+event polling with an explicit cursor contract (`session` epoch +
+`evicted` signal — see [api.md](api.md) § AbstractCore integration).
+`CAMERA_TOOL_CLASSIFICATION` declares which tools capture the physical
+environment — approval layers gate those by default (user-overridable).
+
+To wake a parked workflow on movement instead of polling, run the
+sentinel: `abstractcamera watch --gateway http://127.0.0.1:8080
+--mailbox camera --detect motion` — detection/capture events arrive as
+durable gateway events for any run declaring the mailbox.
 
 ## Camera-less development
 
@@ -464,6 +544,26 @@ pre-move and post-move implementations on identical simulator scenarios.
 
 # API reference
 
+## AbstractCore integration (ADR 0012)
+
+Installing abstractcamera beside abstractcore registers the `camera`
+capability automatically (entry point group
+`abstractcore.capabilities_plugins`, backend id `abstractcamera:hub`).
+
+| Surface | Contract |
+| --- | --- |
+| `abstractcamera.service.CameraService` | Synchronous dict-in/dict-out ops over a `CameraHub`: `list_cameras/open/close/close_all/status/preview_frame/preview_photo/capture_photo/capture_video/stop_recording/start_detection/stop_detection/get_events`. Every result carries `success`; failures carry actionable `error` text and NEVER raise on bad input. Capture waits watch the event log from a pre-trigger watermark with bounded timeouts (`timed_out: true` sentinel) and skip stale-stamped backlog files (`trigger_id` correlation); everything that writes capture mode or triggers holds a per-camera capture lock (concurrent captures refuse honestly; `stop_recording` is the escape hatch for recordings started by detection auto-fire). Under armed auto-fire, `capture_photo` returns an honest DEFERRED success (downloads land at disarm). `open()` is idempotent AND serialized (concurrent opens join the in-flight claim instead of double-claiming the device); re-opens after an unplug reap the dead session and reuse its uid. `preview_photo` saves the current live-view frame (no shutter). `get_events` responses carry the wire contract: `session` (id-space epoch; new value = reconnect, reset cursors), `evicted`/`first_retained_id` (bounded-log gap signal), per-event `trigger_id` + detection `metrics`. `get_shared_service()` is the process-wide instance both integration surfaces use; it honors `ABSTRACTCAMERA_CAPTURE_ROOT` and registers an atexit that releases cameras (flushing downloads) on clean process exit. |
+| `integrations.abstractcore_plugin` | The capability plugin (`register(registry)`); import-light — the camera stack (OpenCV) loads on first USE, never at plugin/registry load. Capability methods raise `CameraControlError` on failure (core convention) and return JSON-safe dicts (core ruling c3168). `capture_photo`/`capture_video`/`stop_recording` return paths by default, add base64 content (`data_b64`, capped 64MB — use the artifact store beyond) with `include_bytes=True`, and store `{"$artifact": ...}` refs when `artifact_store=` is provided; `preview_frame` returns JPEG bytes as the return value (the one documented exception to the dict rule) or an artifact ref. Catalog routes: `available_providers()` (full transport records, derived from live driver resolution), `list_models()` (devices), `list_operations()`. Note: the camera hub is process-shared — the LAST configured `camera_capture_root` wins for newly opened cameras across every consumer in the process. |
+| `integrations.abstractcore_tools` | Eleven explicit `camera_*` tools for LLM tool calling: `camera_list_devices`, `camera_open`, `camera_close`, `camera_status`, `camera_preview_photo` (look without shooting — live-view frame, no shutter), `camera_capture_photo`, `camera_capture_video`, `camera_stop_recording`, `camera_start_detection`, `camera_stop_detection`, `camera_get_events`. Accessors: `camera_tools()` (callables for `generate(tools=...)`), `camera_tool_definitions()` (ToolDefinitions), `camera_tool_specs()` (flat dicts). `CAMERA_TOOL_CLASSIFICATION` declares `mutating`/`remote_write_capable`/`captures_environment` per tool, exhaustively. `camera_tool_approval_defaults()` derives host approval defaults from the classification (auto-approve only when every fact is false — today `camera_list_devices`/`camera_status`/`camera_get_events`; every `captures_environment` tool defaults to require-approval, user-overridable through host policy per the operator ruling — a default, not a floor): the consumption surface for AbstractRuntime's `ToolApprovalPolicy` (backlog 0012). |
+| `gateway_bridge` + `abstractcamera watch` | The sentinel lane (backlog 0016): a standalone process that opens a camera, arms detection, and forwards catch-log events as DURABLE AbstractGateway events (`POST /api/gateway/commands`, type=emit_event, global-scope mailbox) so parked workflows/entities wake on movement instead of polling. `GatewayEmitter` (stdlib HTTP, bearer from `--token`/`ABSTRACTGATEWAY_AUTH_TOKEN`), `CursorStore` (per camera+session cursors, atomic writes), `CameraEventBridge` (kind-filtered poll loop; at-least-once toward the gateway, exactly-once past its command store via derived command ids; cursors hold on gateway failure). CLI: `abstractcamera watch --gateway URL --mailbox camera --detect motion --action photo`. |
+
+Detection actions: `action="photo"` auto-fires a still per detection
+(cooldown-gated); `action="video"` starts recording on the first detection
+and stops it on a later one; `action="monitor"` only logs. Targets:
+`motion`, `lightning`, `meteor`. `camera_get_events(since_id=...)` is the
+polling surface (`event_watermark` from `camera_start_detection` is the
+starting cursor).
+
 ## Module surface
 
 ```python
@@ -475,9 +575,28 @@ from abstractcamera import (
     is_tethering_available,  # gphoto2-shaped transport resolves (PTP-only meaning)
     get_default_manager,     # process-wide instance + atexit release
     parse_jpeg_dimensions,   # JPEG SOF probe (no decode)
+    sync_store,              # download ALL device media (ADR 0011); SyncReport out
+    FilesystemMediaStore,    # media store: USB-mounted card (CardLayout-driven)
+    DwarfAlbumMediaStore,    # media store: the DWARF album over Wi-Fi
+    find_card_volumes,       # mounted cards by album signature (never volume label)
+    MediaEntry, SyncReport,
     ACTION_WIDGET_NAMES, CONFIG_WIDGET_NAMES,
 )
 ```
+
+## Device media downloads (`abstractcamera download`, ADR 0011)
+
+| Surface | Contract |
+| --- | --- |
+| `sync_store(store, dest=None, *, delete=False, delete_protected=False, dry_run=False, log=print)` | Downloads every media file `store` lists into `dest` (default `~/Pictures/<store.device_slug>/`), size-verified and incremental — `protected` entries (the device calibration library) are always DOWNLOADED. With `delete`, removes device copies that verify locally AT DELETE TIME; protected entries survive unless `delete_protected` (CLI: `--delete-calibrations`) opts in; unverifiable entries never delete. Returns a `SyncReport` (copied/skipped/deleted/deleted_protected/protected/failures). |
+| `FilesystemMediaStore(root, layout=DWARF_CARD_LAYOUT)` | Any mounted device card. `CardLayout` declares the album dirs, protected subtrees, and the local slug — adding a device's card is a declaration, not code. |
+| `DwarfAlbumMediaStore(host)` | The DWARF album over Wi-Fi: REST index, streamed downloads, `/album/delete`. |
+| `find_card_volumes()` | `(mount_point, layout)` for volumes matching a known card signature under `/Volumes`. |
+
+A MediaStore adapter is ~6 methods (`list_media`/`fetch`/`delete`/
+`finalize_delete`/`describe`/`validate` + `device_slug`, `can_delete`) —
+the sync engine owns all safety rules, so new devices (PTP cards over
+libgphoto2 are next) inherit them unchanged.
 
 ## CameraHub (multi-camera hosts)
 
@@ -600,9 +719,10 @@ No — and that is the device's design, not a package gap (measured
 MASS-STORAGE gadget exposing the microSD (volume "U盘", exFAT — the full
 album tree: `Normal_Photos/`, `Astronomy/` FITS subs + calibration
 frames, `Videos/`, `Panoramas/`). That is a fast bulk-import path for
-captures, and nothing more: no serial endpoint, no USB network interface,
-no control plane. Piloting (live view, dials, capture, mount) is
-Wi-Fi-only — see the next question.
+captures — `abstractcamera download` copies it all (and `--delete` frees
+the card after verified copies) — and nothing more: no serial endpoint,
+no USB network interface, no control plane. Piloting (live view, dials,
+capture, mount) is Wi-Fi-only — see the next question.
 
 **Can I steer the DWARF's mount from here?**
 
@@ -778,6 +898,16 @@ album and downloads on the next capture's poll.
 device's own refusal. Run `request_action("calibrate")` once under open
 sky first (`no GOTO has run yet` names the same gap), check the target is
 above the horizon, and mind the mount limit warnings in the catch log.
+
+**`deletion refused: ... is not dwarf_3's own storage`**
+The volume you pointed `download --delete` at does not present the
+camera's own hardware identity (the DWARF's USB storage mode reports
+`File-Stor Gadget`; your volume reports its drive/reader identity). It is
+most likely a personal drive or a BACKUP COPY of the card — folder
+contents cannot prove otherwise, so deletion is refused there by design.
+Copying from it works. To free the actual card, plug the camera itself
+and enable its USB storage mode. Note a card in a USB reader also
+refuses, deliberately: fail-safe beats convenience.
 
 **Simulated camera in tests without env vars**
 `CameraManager(driver=FakeDriver(abstractcamera.sim.gphoto2))` — the
@@ -1200,11 +1330,595 @@ and (b) has controllable degrees of freedom beyond the sensor.
   opt-in via flags; the default run is read-only plus one photo).
 
 
+## FILE: docs/adr/0011_device_media_stores_one_sync_engine.md
+
+# ADR 0011 — Device media stores: one download/sync engine, per-device adapters
+
+Date: 2026-07-16 · Status: accepted
+
+## Context
+
+"Download ALL the files from the device (and optionally free it)" is a
+capability users expect from every camera this package pilots — a DWARF
+card over USB today, the DWARF album over Wi-Fi, a Sony A7R IV or Nikon
+Z6 II card over PTP tomorrow. The first implementation (a DWARF-only
+`import` command, 2026-07-16, never released) hardcoded the card layout
+AND the safety rules in one module; a second device would have duplicated
+the rules — and deletion rules that exist in N copies eventually diverge
+in the copy that deletes someone's photos.
+
+## Decision
+
+1. **Split mechanics from policy.** A `MediaStore` adapter
+   (`media_store.py`) owns the DEVICE-SPECIFIC mechanics behind a small
+   structural contract: `device_slug`, `describe()`, `validate()`,
+   `list_media() -> [MediaEntry]`, `fetch(entry, local_path)`,
+   `can_delete`, `delete(entry)`, `finalize_delete(deleted)`. The sync
+   engine (`media_sync.sync_store`) owns every SAFETY RULE, once:
+   incremental size-verified copies, destination space checks
+   (512MB floor), verify-at-delete-time, `protected` entries never
+   deleted, unverifiable (size-unknown) entries never deleted, dry-run
+   walking the identical decision path.
+
+2. **`MediaEntry.protected` is the device-functional-state flag.** Some
+   files live among media but belong to the device (the DWARF's
+   `Astronomy/CALI_FRAME` dark library — deleting it silently forces
+   re-shooting darks). Stores mark them; the engine ALWAYS downloads
+   them (they are photos — operator ruling 2026-07-16) and refuses to
+   delete them unless the caller explicitly opts in
+   (`delete_protected` / CLI `--delete-calibrations`, which still runs
+   the verified-local-copy rule). Device system state (logs, firmware)
+   is never even LISTED.
+
+3. **Two stores ship now**: `FilesystemMediaStore` (any mounted card,
+   parameterized by a declarative `CardLayout`; DWARF's layout is the
+   first — detection by album-dir SIGNATURE, never by volume label) and
+   `DwarfAlbumMediaStore` (the Wi-Fi album: REST index, streamed HTTP
+   fetch, `/album/delete`). A PTP card store (libgphoto2 folder walk +
+   `file_get`/`file_delete`) is the named next adapter; the engine is
+   ready for it unchanged.
+
+4. **Detection is HARDWARE-IDENTITY-ONLY (2026-07-16 live incident +
+   operator ruling).** An operator's external DRIVE carrying `astronomy/`
+   and `videos/` folders matched a folder signature (macOS filesystems
+   are case-insensitive) and was OFFERED as a `--delete` target. The root
+   cause is structural: content can never distinguish the device from a
+   copy/backup of it — a copy is identical by definition. So folder
+   contents are NEVER consulted for detection. `find_card_volumes()`
+   returns a volume only when its `diskutil` identity matches
+   `CardLayout.device_media_names` on removable-USB backing (the DWARF
+   presents `MediaName = "File-Stor Gadget"`, measured). A freshly
+   formatted (empty) camera card IS detected; a drive with camera-shaped
+   folders is NOT. `deletion_guard()` refuses deletion — dry runs and
+   explicit `--source` included — on any volume that fails the identity
+   check; copy-only import from a non-matching volume proceeds (backup
+   restore is legitimate) with a loud note. Unknown identity (diskutil
+   failure, non-macOS) counts as NOT the device: fail-safe. A card in a
+   USB READER presents the reader's identity and refuses deletion. HONEST
+   LIMIT: `MediaName` is the Linux mass-storage gadget's own string, not a
+   per-unit attestation — it excludes every ordinary drive but another
+   Linux gadget device could present it; the deletion prompt surfaces the
+   volume UUID so the operator confirms the physical volume.
+
+5. **Device/host-supplied PATHS are contained at a single choke point
+   (2026-07-16 adversarial review).** After the identity gate, the engine
+   still moved bytes by strings the device/host supplied — an album
+   `filePath` with `..` could overwrite arbitrary local files (P0), and a
+   symlinked media root could make copy/delete escape the card (P1).
+   Rules now: (a) `sanitize_relpath` strips `..`/absolute/`.` components
+   from every device-supplied path; (b) `contained_path` re-resolves each
+   local target and refuses anything that escapes `dest`; (c)
+   `FilesystemMediaStore` skips symlinked media roots and symlinked
+   subdirs/files, copies with `follow_symlinks=False`, and re-proves each
+   `delete()`/prune target inside the volume's realpath (the ADAPTER is
+   safe by construction, not only via the engine); (d) two device entries
+   mapping to one local relpath are never deleted (the second file's
+   bytes would be lost); (e) `dest` inside the source is refused;
+   (f) unknown-size entries are budgeted pessimistically against the
+   free-space floor.
+
+4. **One CLI verb**: `abstractcamera download [--source PATH | --host IP]
+   [--dest PATH] [--delete] [--dry-run]` — auto-detects mounted cards,
+   defaults the destination to the family capture layout
+   (`~/Pictures/<device_slug>/`).
+
+## Consequences
+
+- Sizes, not mtimes, are the comparison truth (measured: the DWARF's
+  clock stamps card files with year-2038 dates; exFAT mtimes there are
+  decoration).
+- A store without trustworthy sizes still syncs (files copy; they are
+  just excluded from deletion — honesty over convenience).
+- The engine is transport-agnostic but NOT concurrency-managed: one sync
+  per device at a time is the caller's responsibility (same posture as
+  the manager's single worker).
+- Deleting between listing and deletion is safe against device-side
+  changes: deletion re-verifies the LOCAL copy at delete time and the
+  device file is addressed by the listing's own reference, so a vanished
+  file surfaces as an honest per-file failure, never a wrong deletion.
+
+
+## FILE: docs/adr/0012_abstractcore_capability_plugin.md
+
+# ADR 0012 — AbstractCore integration: one service, capability plugin + explicit tool set
+
+Date: 2026-07-19 · Status: accepted
+
+## Context
+
+The operator directed abstractcamera to become an optional AbstractCore
+capability plugin the way abstractvision/abstractvoice extend core: turn a
+camera on/off, take photo/video, motion-detect-and-capture — plus a tool
+set so an AI, agent, or entity can drive it, surfaced on the AbstractCore
+server. AbstractCore is the target: camera adapts to core's existing
+patterns, never the reverse.
+
+Investigation facts (2026-07-19, verified against both reference plugins
+and core's registry):
+
+- Core discovers plugins via the `abstractcore.capabilities_plugins` entry
+  point group; `register(registry)` receives a duck-typed registry — a
+  plugin needs ZERO imports from abstractcore.
+- Core's registry has typed helpers (voice/audio/vision/music/scene3d) and
+  hardcoded facades, but the GENERIC `register_backend(capability=...)`
+  path plus generic discovery routes (`available_providers`, `list_models`,
+  `list_operations`) work for ANY capability string TODAY. A first-class
+  `core.camera` facade, `CameraCapability` protocol, and `/v1/camera/*`
+  server routes require core-side additions (asked at commons c3135; core
+  owns that merge).
+- Core's builtin tool inventory is deliberately core-only and global tool
+  registration is deprecated: the durable tool contract is EXPLICIT tools
+  passed to `generate(tools=...)` or registered on a host executor
+  (AbstractRuntime toolsets are the later runtime/gateway lane).
+- CameraManager triggers are asynchronous (worker fires; results surface
+  as catch-log events). Request/response callers need a synchronous
+  "capture and tell me where it landed" layer that does not exist.
+
+## Decision
+
+1. **One service, N surfaces.** `service.py` (`CameraService`) is the
+   synchronous dict-in/dict-out operation layer over a `CameraHub`:
+   list/open/close/status/preview_frame/capture_photo/capture_video/
+   start_detection/stop_detection/get_events. Capture completion is
+   resolved by watching the per-camera event log from a watermark taken
+   BEFORE the trigger; waits are bounded and timeouts are honest errors.
+   The capability plugin, the tool set, and any future HTTP route all
+   delegate here — the safety/arbitration rules stay in CameraManager,
+   the request/response adaptation exists exactly once.
+
+2. **Process-shared service.** Cameras are process-wide hardware (a body
+   claimed by two hubs wedges the transport), so both integration surfaces
+   resolve `get_shared_service()`: an agent that opened a camera through a
+   tool and a host calling `core.camera.capture_photo(...)` address the
+   SAME session.
+
+3. **Capability via the generic registry path.**
+   `integrations/abstractcore_plugin.py::register(registry)` uses
+   `registry.register_backend(capability="camera", backend_id=
+   "abstractcamera:hub", ...)` — works on today's core unchanged — and
+   automatically prefers a typed `register_camera_backend(...)` when core
+   ships one. Capability methods RAISE `CameraControlError` on failure
+   (core's facade/server convention); the service's success/error dicts
+   are unwrapped at this boundary. Capture payloads follow the vision
+   plugin's conventions: paths by default, bytes on `include_bytes=True`,
+   `{"$artifact": ...}` refs when an `artifact_store` is provided.
+
+4. **Tools are explicit, classified, and camera-owned.**
+   `integrations/abstractcore_tools.py` ships ten `camera_*` tools as
+   `@tool`-decorated functions plus `camera_tools()` /
+   `camera_tool_definitions()` / `camera_tool_specs()` accessors — no
+   global registration, no entry-point magic. The module declares the
+   facts this package owns about its OWN tools
+   (`CAMERA_TOOL_CLASSIFICATION`: mutating / remote_write_capable /
+   `captures_environment`), exhaustively both ways (core's inventory
+   rule). `captures_environment` is the camera-specific fact approval and
+   privacy layers must key on: these tools photograph the physical world.
+
+5. **The simulator is the CI hardware.** All integration tests run against
+   core's REAL `CapabilityRegistry` / `ToolRegistry` with
+   `ABSTRACTCAMERA_FAKE=1` (or an injected `FakeDriver`) — the entry
+   point, registration, discovery routes, capture flows, and tool
+   execution are exercised end-to-end with zero devices attached.
+
+## Consequences
+
+- abstractcamera keeps zero hard dependency on abstractcore; the entry
+  point is inert until abstractcore is installed beside it.
+- Until core lands the camera facade, Python callers use
+  `core.capabilities.available_providers("camera")` (generic routes) or
+  the plugin/tool surfaces directly; `status()` does not list "camera"
+  (core-side, asked).
+- Server `/v1/camera/*` routes are core-side work (extension endpoints —
+  OpenAI has no camera API; `/v1/audio/music` is the precedent).
+- Runtime/gateway toolset registration (approval tiers, entity grants) is
+  a follow-up lane and consumes `camera_tool_definitions()` +
+  `CAMERA_TOOL_CLASSIFICATION` as its source of truth.
+
+## Core rulings folded (commons c3168, 2026-07-19)
+
+- Capability name "camera" + the op set APPROVED. Contract hardened: every
+  capability op returns JSON-SAFE dicts (results may land in runtime
+  ledgers) — `include_bytes=True` therefore attaches base64 (`data_b64`),
+  never raw bytes; capture bytes ride `artifact_store` when provided.
+  `detection_events` stays non-blocking poll-shaped (a blocking wait in a
+  capability op would freeze generate-path callers). The protocol stays
+  minimal-required (backend_id + ops; discovery optional-by-duck-typing).
+- Core-side surface: camera drafts the patch IN CORE'S TREE (separate
+  files: `server/camera_endpoints.py`; additive marked blocks in types.py/
+  registry.py), core owner-reviews and merges. Routes follow the
+  `/v1/audio/music` precedent exactly — 501 with install_hint when the
+  plugin is absent; photo response OpenAI-images-shaped
+  `{created, data: [{b64_json}]}`.
+- Tools stay EXPLICIT-IMPORT, deliberately no entry-point group (core's
+  security rationale, verbatim intent): tools are a security surface —
+  entry-point auto-registration would let `pip install anything` silently
+  widen every agent's tool surface, breaking grant semantics (grants are
+  capability-level by name; containment binds at composition — a host must
+  consciously compose which ToolDefinitions it registers). A future group,
+  if ever, would serve discovery-not-registration and needs its own
+  security review.
+- The new classification tag string `captures_environment` requires a
+  semantics pass before engraving into shipped definitions (asked commons
+  c3172; `mutating`/`remote_write_capable` are the existing inventory
+  vocabulary and ride unchanged). PASSED same-day (c3176) with one
+  amendment adopted verbatim: the definition is SENSOR-GENERAL (any
+  ambient sensor — camera today, a microphone tool tomorrow; screen
+  capture deliberately out), so future audio tools extend this one privacy
+  axis instead of minting siblings. General shape for domain tags recorded
+  as decision:domain-tool-classification-tags.
+
+## Operator ruling folded (commons c3938, 2026-07-21): defaults, not a floor
+
+- `camera_tool_approval_defaults()` ships ask-by-default for every tool
+  with any true fact, and that is a DEFAULT, not a floor: the operator
+  ruled "a user must be able to auto accept camera or ask the agent to
+  request permissions, like for any other tool." Host policies (e.g.
+  AbstractRuntime's run-scoped tool_policy) may auto-accept
+  `captures_environment` tools on the user's explicit say-so. What the
+  derivation guarantees is narrower and permanent: capture never
+  auto-approves WITHOUT a user's choice, and a drifted classification
+  entry fails closed to require-approval. The never-auto contingency
+  (a host-side hard floor) is dead.
+
+## Adversarial folds (2 subagent passes, 2026-07-19 — 1 P0 / 8 P1 / 15 P2)
+
+Two independent adversaries (code/logic; consumer-contract) attacked the
+integration. Every accepted finding is folded and test-pinned:
+
+- **P0 — capture-mode writes bypassed the capture lock**: the trigger is a
+  TOGGLE in video mode, so an unguarded `set_capture_mode` during a bounded
+  recording turned its stop toggle into a still trigger and STRANDED the
+  recording with no stop surface. Now: `start_detection` takes the
+  per-camera capture lock; `capture_photo`/`start_detection` refuse while
+  `movie_recording`; `capture_video` refuses while auto-fire is armed; and
+  `stop_recording()` exists as the escape hatch (service op, capability op,
+  and the tenth tool).
+- **Deferred-download honesty**: armed auto-fire defers downloads by
+  design, so `capture_photo` under it ALWAYS timed out; it now returns an
+  honest deferred success. A flushing backlog could be mis-attributed as a
+  new capture's result (photo events carry no trigger correlation); capture
+  now refuses while `downloads_pending > 0` outside armed mode.
+- **Wait-loop discipline**: movie-state waits filter error events by
+  capture-shaped reason (a config-honesty revert was reported as the
+  recording's failure while it recorded on) and re-check actual state
+  before failing; timeouts carry a `timed_out` sentinel (a "Timed out"
+  SUBSTRING match had converted a real download failure into success);
+  waits fail fast when the camera disconnects mid-capture.
+- **No-raise contract**: all numeric inputs coerce via
+  `service_support.coerce_number/coerce_int` and fail as dicts BEFORE any
+  hardware acts (a bad `timeout_s` used to raise bare ValueError AFTER the
+  recording ran).
+- **Import weight**: `import abstractcamera` and the plugin module are now
+  LAZY (PEP 562) — core processes listing capabilities no longer pay the
+  OpenCV import; the camera stack loads on first use.
+- **Consumer truths**: `available_providers()` carries full provider
+  records through core's normalizer (bare strings made uninstalled
+  transports read "available"); ABSTRACTCAMERA_CAPTURE_ROOT is honored at
+  the shared-service choke point (the tools path ignored it); default
+  `open()` is idempotent (a retry double-claimed the device); tool
+  descriptions teach the two id spaces on the wire itself (docstring Args
+  never reach the model; core caps descriptions at 200 chars);
+  `camera_tool_specs()`/`camera_tool_definitions()` return isolated copies
+  (a host mutation corrupted the shared schema); artifact-store failures
+  translate to `CameraControlError`; `include_bytes` is capped (64MB) with
+  the artifact store named for larger payloads; tests capture into
+  tmpdirs, never the operator's real `~/Pictures`.
+
+Deliberately NOT changed: `preview_frame` returning raw JPEG bytes as the
+RETURN VALUE stays the documented exception to the JSON-safe-dict rule
+(vision-plugin convention; an artifact ref when a store is passed); the
+hub's process-shared capture-root semantics (LAST configurer wins for new
+connections) stay and are documented in the config_hint.
+
+
+## FILE: docs/adr/0013_event_wire_contract_and_gateway_sentinel.md
+
+# 0013 — The event log is a wire contract; the camera is a wake source
+
+Date: 2026-07-21 · Status: accepted
+
+## Context
+
+ADR 0012 made the catch-log an API: LLM tools (`camera_get_events`) and
+`/v1/camera/events` poll it as consumers. An adversarial pass (2026-07-21)
+found the contract underspecified in exactly the ways machine consumers
+hit: eviction was indistinguishable from quiet (bounded deque, ~minutes
+under busy auto-fire), cursor epochs reset invisibly on reconnect (a
+stored `since_id` silently hid the new session's events), photo events
+carried no correlation to the trigger act that produced them (a deferred
+backlog file flushing during a capture wait could be claimed as that
+capture's result), and detectors threw away structured metrics at the
+boundary (prose notes only). Separately: polling is the wrong shape for
+"wake me when something moves" — the framework's differentiator is parked
+durable runs woken by `emit_event`, and the camera had no producer half.
+
+## Decision
+
+1. **Explicit cursor contract.** Every manager mints a `session` epoch at
+   connect; `get_events` responses carry it, plus `evicted` +
+   `first_retained_id` when the bounded log dropped events past the
+   caller's cursor. Consumers reset cursors on epoch change; gaps are
+   signaled, never silent. All seven event kinds are documented wire
+   vocabulary (`detection`, `trigger`, `photo`, `photo-pending`, `clip`,
+   `camera-event`, `error`).
+
+2. **Announce-time trigger correlation.** Every trigger ACT increments a
+   per-manager `trigger_seq` before hardware fires; file events are
+   stamped with the seq current at ANNOUNCE time and the stamp rides the
+   deferred-download queue. Capture waits snapshot the seq before firing
+   and skip stamped events below it. This is deliberately an
+   approximation — PTP gives no true file↔trigger link; files announced
+   after trigger N and before N+1 belong to N (a burst's files all carry
+   its one seq). The existing guards (per-camera capture lock, busy
+   refusal while `downloads_pending`, armed-mode refusals) close the
+   orderings the approximation alone would miss. Unstamped events are
+   still accepted by waits: a stamping gap must degrade to the old
+   behavior, never to a timeout.
+
+3. **The sentinel lane (`abstractcamera watch`, `gateway_bridge.py`).**
+   Camera as event PRODUCER: a standalone process owns one camera session
+   (open → arm detection → forward → disarm/close), polls the local event
+   log, and posts matching events as DURABLE gateway events
+   (`POST /api/gateway/commands`, type=emit_event, global-scope mailbox —
+   the resident-agent rendezvous). Parked workflows/entities declaring
+   the mailbox wake on movement; the payload carries capture paths +
+   detection metrics so the woken agent works without holding the camera.
+   Delivery semantics: at-least-once toward the gateway (cursors persist
+   per camera+session AFTER each accepted emit; failures hold the cursor),
+   exactly-once past it (command ids derived from
+   mailbox+camera+session+event id — the gateway command store dedupes
+   crash replays; live-verified `duplicate: true`). Stdlib-only HTTP: the
+   bridge must not drag client dependencies into the base install.
+
+4. **Look without shooting.** `camera_preview_photo` (eleventh tool,
+   `CameraService.preview_photo`) saves the current live-view frame — no
+   shutter actuation, no capture event, nothing on the camera's card. An
+   agent asked "what do you see?" no longer fires a physical shutter.
+   Classified `captures_environment: True` (it records the surroundings;
+   ask-by-default like every recording tool) with
+   `remote_write_capable: False` (frame pulls are reads).
+
+## Adversarial folds (one subagent pass, 2026-07-21 — 2 P1 / 8 P2)
+
+The operator-mandated adversary attacked the wave; every accepted finding
+is folded and test-pinned. The two P1s shared one theme: the wave built a
+correct correlation/epoch PRODUCER and left two CONSUMERS reading the old
+world — (1) the capture wait's ERROR branch ignored the trigger stamp, so
+a backlog file whose fetch failed mid-wait was reported as the fresh
+capture's failure (stale-stamped errors now skip; unstamped errors still
+abort); (2) the direct-manager reconnect path re-minted the epoch but kept
+events/counters, making the "new epoch = reset your cursor" contract a
+lie for `get_default_manager()`-style hosts and double-waking bridge
+consumers with history (a reconnect now clears the log and restarts ids
+— a new epoch IS a new id space). P2 folds: sequence frames are trigger
+acts (own seq per frame — a 100-frame timelapse no longer stamps 100
+files with one stale act); fatal bridge auth errors (401/403/404) are
+named instead of "retrying, nothing lost"; the default cursor file is
+per-mailbox (whole-file replace loses a co-tenant's cursors); `--kinds`
+strips whitespace; relative `--state-file` paths persist; `preview_frame`
+fails fast on a dead camera instead of "retry shortly"; `public_status`
+carries `session`; the hub docstring no longer teaches chained bare
+connects (default resolution has no "next unclaimed device" notion — a
+chain double-claims). Honest residuals documented rather than "fixed":
+under armed auto-fire a detection act can interleave between a manual
+capture's seq snapshot and its fire (shape-identical deferred result,
+harmless), and announce-time stamping cannot distinguish act N's slow
+file from act N+1's (the timeout-retry window) — inherent to PTP's
+missing file↔trigger link.
+
+## Consequences
+
+- The bridge owns its camera session end to end; it deliberately does NOT
+  observe cameras other processes opened (a device claimed twice wedges
+  the transport). Agent-held cameras inside a gateway process would need
+  a host-side pump — a separate design, gateway ruled itself
+  zero-camera-code.
+- One state file per bridge process by default; concurrent bridges should
+  use distinct `--state-file` paths (documented limitation).
+- Consumers that stored cursors before this contract see `session` appear
+  and should adopt the reset rule; the response is otherwise
+  backward-compatible (added keys only).
+- The `_pending_downloads` queue tuple grew a `trigger_id` element —
+  internal shape, no external consumer.
+
+
 ## FILE: CHANGELOG.md
 
 # Changelog
 
 ## Unreleased
+
+- **Adversarial pass on the whole wave (operator-mandated, one subagent —
+  2 P1 / 8 P2, all folded + test-pinned; ADR 0013 § Adversarial folds).**
+  The P1 theme: correct correlation/epoch PRODUCERS with two CONSUMERS
+  still reading the old world — the capture wait's error branch ignored
+  trigger stamps (a backlog fetch failure mid-wait was reported as the
+  fresh capture's failure), and direct-manager reconnects re-minted the
+  session epoch while keeping old events/counters (cursor-reset consumers
+  re-read history as new; the bridge would re-emit it). Both fixed
+  consumer-side. P2 folds: sequence frames are numbered trigger acts;
+  bridge fatal-auth honesty; per-mailbox cursor files; CLI input hygiene;
+  fail-fast preview on dead cameras; `session` in public status; honest
+  hub connect docstring.
+- **Camera → gateway event bridge: the sentinel lane (backlog 0016).**
+  New `abstractcamera watch` verb + `gateway_bridge.py`: a standalone
+  process opens a camera, arms detection, and forwards catch-log events as
+  DURABLE AbstractGateway events (`POST /api/gateway/commands`,
+  type=emit_event, global-scope mailbox) — parked workflows/entities
+  declaring the mailbox WAKE on movement instead of polling
+  `camera_get_events` with model turns. Delivery is at-least-once toward
+  the gateway and exactly-once past its command store (command_id derived
+  from mailbox+camera+session+event id — crash replays dedupe as
+  `duplicate: true`, live-verified against a running gateway); cursors
+  persist per (camera, session epoch) and reset honestly when the camera
+  reconnects; stdlib-only HTTP.
+- **Event-log wire contract (backlog 0015).** The event log is an API for
+  LLM/workflow consumers now, so the contract is explicit: `get_events`
+  responses carry `session` (the id-space epoch — a new value means the
+  camera reconnected and cursors reset) and `evicted`/`first_retained_id`
+  (the bounded log dropped events past your cursor — previously
+  indistinguishable from "quiet"). File events carry `trigger_id`
+  correlating them to their trigger act (announce-time stamping), and
+  capture waits skip stale-stamped backlog files — closing the
+  misattribution window where a deferred download flushing mid-wait could
+  be claimed as the fresh capture's result. Detection events now carry the
+  detector's structured `metrics` (bbox/centroid/speed/duration) instead
+  of prose-only notes. All seven wire kinds are documented (`detection`,
+  `trigger`, `photo`, `photo-pending`, `clip`, `camera-event`, `error`).
+- **`camera_preview_photo`: look without shooting (backlog 0017).** The
+  eleventh tool (+ `CameraService.preview_photo`) saves the current
+  live-view frame as a JPEG and returns its path — no shutter actuation,
+  no capture event, nothing on the camera's card. The default answer to
+  "what do you see?"; classified `captures_environment` (ask-by-default)
+  like every recording tool, but `remote_write_capable: False` (frame
+  pulls are reads).
+- **P1 lifecycle fixes (adversarial pass 2026-07-21, all empirically
+  reproduced pre-fix).** (a) Concurrent `open()` double-claimed one
+  physical device (check-then-act race in both the service guard and
+  `hub.connect`) — both layers now serialize their whole
+  check→create→connect→register window, so a retry-after-slow-open JOINS
+  the in-flight open instead of racing it (real PTP transports wedge on a
+  double claim). (b) An unplug (liveness-watchdog death) left a dead
+  manager squatting on its uid forever: every re-open minted a suffixed
+  uid (`nikon_z_6ii_2`, `_3`, …), splitting the capture folder and
+  invalidating stored agent uids, while corpses accumulated frames — the
+  next connect now reaps dead managers (uid + capture folder restored),
+  and the worker clears frame/ring state on every exit path. (c)
+  `get_shared_service()` had no exit hook (the legacy singleton did):
+  a routine host restart could leave a camera claimed — or RECORDING —
+  with deferred downloads stranded; an atexit now runs `close_all()`
+  (bounded worker joins, downloads flushed per disconnect's contract).
+- **P0 fixed in core's tree (owner-accepted, commons c3987).** All eleven
+  `/v1/camera/*` handlers in abstractcore were `async def` calling
+  blocking capability ops — one 600s video capture serialized the whole
+  server behind it (the head-of-line wedge class core's audio endpoints
+  document). Converted to sync-def (FastAPI threadpool dispatch, the
+  audio_speech precedent) with a router-iterating pin test; core applied
+  the same structural pin to its audio lane the same hour.
+- **Camera skill draft.** `skills/camera-piloting/SKILL.md` teaches agents
+  the two id spaces, look-vs-shoot etiquette, capture/detection
+  choreography with the new cursor rules, cleanup honesty, and the
+  sentinel pattern — handed to the skill seat for library adoption.
+- **Approval-defaults helper for host policies (backlog 0012).**
+  `camera_tool_approval_defaults()` derives auto-approve/require-approval
+  name sets from `CAMERA_TOOL_CLASSIFICATION` (never hand-listed): a tool
+  auto-approves only when it neither mutates local state, nor reaches
+  remote devices, nor records the physical surroundings — the consumption
+  surface for AbstractRuntime's `ToolApprovalPolicy`. These are DEFAULTS,
+  not a floor (operator ruling, commons c3938): a user may auto-accept
+  camera tools through the host's policy like any other tool; the
+  derivation just never auto-approves capture without that explicit user
+  choice. FAILS CLOSED (adversarial pass, operator-mandated 0012 gate): an
+  entry missing a fact key or carrying an extra one goes to
+  require_approval — the fail-closed default lives in the code, not the
+  exhaustiveness test, so a drifted classification can only ever be
+  stricter. Documented consumer caveat: auto-approval means the tool does
+  not itself capture/mutate/reach-remote, NOT zero imagery egress —
+  `camera_get_events`/`camera_status` return capture file paths, so
+  unattended hosts should pair the toolset with a non-auto file-read policy
+  (a dedicated capture-reference privacy tag was RULED against at the
+  semantics desk: references are host-policy composition, not a tool fact).
+- **AbstractCore capability plugin + AI tool set (ADR 0012).** abstractcamera
+  is now an optional AbstractCore capability plugin, like abstractvision and
+  abstractvoice: the `abstractcore.capabilities_plugins` entry point
+  registers the `camera` capability (`backend_id="abstractcamera:hub"`)
+  through core's generic registry path — turn cameras on/off, take photos
+  and bounded video clips, arm motion/lightning/meteor detection with
+  auto-capture, read the event log, grab preview frames; capture payloads
+  ride file paths by default, bytes on request, `{"$artifact": ...}` refs
+  when an artifact store is provided. New `service.py` (`CameraService`) is
+  the synchronous dict-shaped operation layer both integration surfaces
+  share (event-watermark capture waits, bounded timeouts, honest errors).
+  New `integrations/abstractcore_tools.py` ships ten explicit `camera_*`
+  tools for `generate(tools=camera_tools())` with a camera-owned
+  classification map (`mutating` / `remote_write_capable` /
+  `captures_environment` — the fact privacy/approval layers key on).
+  Integration tests run against core's REAL CapabilityRegistry/ToolRegistry
+  on the built-in simulator (no hardware in CI). Core-side facade +
+  `/v1/camera/*` server routes are asked/tracked at commons c3135.
+  TWO ADVERSARIAL SUBAGENT PASSES folded (1 P0 / 8 P1 / 15 P2, all
+  accepted findings fixed + test-pinned; ADR 0012 § Adversarial folds):
+  the P0 was capture-mode writes bypassing the per-camera capture lock —
+  a concurrent mode flip turned a bounded recording's stop toggle into a
+  still trigger and stranded the recording with no stop surface; now every
+  mode-writing op holds the lock, recording-state guards refuse
+  conflicting captures, and `stop_recording` (service/capability/tool)
+  is the escape hatch. Also folded: honest DEFERRED capture results under
+  armed auto-fire (blocking always timed out), stale-download attribution
+  guard, movie-wait error-reason filtering, `timed_out` sentinel (never
+  substring matching), disconnect fail-fast, no-raise numeric coercion
+  before hardware acts, PEP 562 lazy package imports (core processes no
+  longer pay OpenCV for listing capabilities), full provider records
+  through core's normalizer, `ABSTRACTCAMERA_CAPTURE_ROOT` honored on the
+  tools path, idempotent default `open()`, wire-visible id-space teaching
+  in tool descriptions, isolated spec copies, artifact-store error
+  translation, 64MB inline-content cap, and tmpdir capture roots in tests.
+- **`abstractcamera download` — download ALL device media, across devices
+  (ADR 0011).** One sync engine (`media_sync.sync_store`) owns every
+  safety rule — incremental size-verified copies (device mtimes are
+  untrustworthy: the DWARF's clock has produced year-2038 stamps),
+  destination space checks before the first byte, deletion ONLY of files
+  whose local copy verifies AT DELETE TIME, `protected` device state
+  (the DWARF's `Astronomy/CALI_FRAME` dark library) copied but never
+  deleted, device system files never even listed, `--dry-run` walking the
+  identical decision path — over per-device `MediaStore` adapters
+  (`media_store.py`): `FilesystemMediaStore` (any USB-mounted card,
+  declarative `CardLayout`, detected by album SIGNATURE never volume
+  label) and `DwarfAlbumMediaStore` (the Wi-Fi album: REST index,
+  streamed downloads, `/album/delete`). PTP-card stores (Sony/Nikon over
+  libgphoto2) are the named next adapters — the engine is ready
+  unchanged.   CLI: `abstractcamera download [--source PATH | --host IP]
+  [--dest PATH] [--delete] [--delete-calibrations] [--dry-run]`
+  (`--delete-calibrations` extends `--delete` to the calibration library,
+  still under the verified-copy rule); library surface:
+  `sync_store(store, ..., delete_protected=)`. Copy+delete paths
+  validated against a real DWARF 3 card (5430 files, 34.8GB; card freed
+  to 150MB with the calibration library preserved and locally verified).
+  `abstractcamera list` now also shows mounted media sources, and the
+  download summary states the everything-already-downloaded outcome
+  explicitly.   HARDWARE-IDENTITY GUARDRAIL (live incident 2026-07-16: an
+  operator's external drive with `astronomy/`+`videos/` folders matched
+  the content signature on macOS's case-insensitive filesystem and was
+  offered as a `--delete` target): detection is now HARDWARE-IDENTITY-ONLY
+  — folder contents are never consulted; a volume is a camera only when
+  its `diskutil` identity matches the device (DWARF: `File-Stor Gadget`
+  on removable-USB backing, measured). Deletion is refused on any other
+  volume (dry runs and explicit `--source` included; unknown identity
+  fails safe); an empty freshly-formatted camera card is still detected;
+  copy-only imports from non-device volumes proceed with a loud note; the
+  deletion prompt surfaces the volume UUID.
+- **Path-containment hardening (adversarial review 2026-07-16).** After
+  the identity gate the engine still moved bytes by device/host-supplied
+  strings; a fable5 adversary found an album `..`-path arbitrary-overwrite
+  (P0) and a symlinked-media-root escape on copy/delete (P1). Fixed at one
+  choke point: `sanitize_relpath` strips `..`/absolute components,
+  `contained_path` refuses any target escaping `dest`, `FilesystemMediaStore`
+  skips symlinked roots/subdirs/files and re-proves every delete/prune
+  target inside the volume's realpath (the adapter is safe by construction),
+  colliding local relpaths are never deleted (no silent loss of the
+  camera's own data), `dest`-inside-source is refused, and unknown-size
+  entries are budgeted against the free-space floor. New regression suite
+  `tests/test_media_security.py` pins every finding closed.
 
 - **DWARF smart telescopes (new `dwarf` family, ADR 0010).** A DWARF 3 is
   piloted over Wi-Fi through the existing abstraction: RTSP live view,

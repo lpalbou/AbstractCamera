@@ -51,6 +51,14 @@ class DownloadsMixin:
             # A file arrived: the silent-refusal watch (if any) is satisfied.
             self._expect_file_deadline = 0.0
             self._expect_file_note = None
+            # Announce-time trigger correlation (wire-contract 2026-07-21):
+            # PTP gives no true file↔trigger link, so files are stamped with
+            # the trigger seq CURRENT at announce time — files announced
+            # after trigger N and before N+1 belong to N (bursts: all of a
+            # burst's files carry its one seq). The stamp rides the deferred
+            # queue so a backlog flush keeps its ORIGINAL trigger id and can
+            # no longer be claimed as a fresh capture's result.
+            trigger_id = self._trigger_seq or None
             if key not in self._pending_download_keys:
                 if not download_locally:
                     # Save policy: DEVICE ONLY — announce honestly, never
@@ -61,16 +69,19 @@ class DownloadsMixin:
                 else:
                     outcome = "deferred"
                     self._pending_download_keys.add(key)
-                    self._pending_downloads.append((event_data.folder, event_data.name, time.time()))
+                    self._pending_downloads.append(
+                        (event_data.folder, event_data.name, time.time(), trigger_id))
                     self._downloads_pending = len(self._pending_downloads)
         if outcome == "device-only":
             self._append_event(
                 kind="photo-pending", reason="captured",
                 note=f"{event_data.name} — saved on the camera (local download is off)",
                 thumbnail_jpeg=self._latest_frame,
+                trigger_id=trigger_id,
             )
         if outcome == "downloaded":
-            self._download_one_pending(camera, event_data.folder, event_data.name)
+            self._download_one_pending(camera, event_data.folder, event_data.name,
+                                       trigger_id=trigger_id)
         # Announce-driven window extension: while files are still flowing
         # (burst tails trail for ~10s on the A7R IV), keep the drain window
         # open; 5s of announce silence lets it close. max() — never shorten.
@@ -107,13 +118,17 @@ class DownloadsMixin:
                         reason="captured",
                         note=f"{event_data.name} — on camera, downloads when Auto-Fire disarms",
                         thumbnail_jpeg=self._latest_frame,
+                        trigger_id=self._trigger_seq or None,
                     )
             else:
                 self._handle_non_file_event(event_type, event_data)
 
-    def _download_one_pending(self, camera, folder: str, name: str) -> None:
+    def _download_one_pending(self, camera, folder: str, name: str,
+                              trigger_id: int | None = None) -> None:
         """One file_get + save + catch-log photo event (extracted from the
-        old inline drain body)."""
+        old inline drain body). `trigger_id` is the ANNOUNCE-time trigger
+        seq carried through the deferred queue — the photo event keeps the
+        act it belongs to even when it downloads minutes later."""
         import os
 
         saved_path = None
@@ -134,7 +149,8 @@ class DownloadsMixin:
                 saved_path = os.path.join(self._capture_dir, f"capture_{stamp}_{base}{ext or '.jpg'}")
                 cam_file.save(saved_path)
         except Exception as exc:
-            self._append_event(kind="error", reason="download", note=f"failed to fetch {name}: {exc}")
+            self._append_event(kind="error", reason="download",
+                               note=f"failed to fetch {name}: {exc}", trigger_id=trigger_id)
             return
         thumbnail = None
         if saved_path and saved_path.lower().endswith((".jpg", ".jpeg")):
@@ -160,6 +176,7 @@ class DownloadsMixin:
             note=os.path.basename(saved_path) if saved_path else name,
             path=saved_path,
             thumbnail_jpeg=thumbnail,
+            trigger_id=trigger_id,
         )
 
     def _flush_pending_downloads(self, camera, time_budget_s: float = 10.0,
@@ -172,10 +189,10 @@ class DownloadsMixin:
             with self._state_lock:
                 if not self._pending_downloads:
                     return
-                folder, name, _announced_at = self._pending_downloads[0]
+                folder, name, _announced_at, trigger_id = self._pending_downloads[0]
             if time.time() >= deadline:
                 return
-            self._download_one_pending(camera, folder, name)
+            self._download_one_pending(camera, folder, name, trigger_id=trigger_id)
             with self._state_lock:
                 # Remove regardless of outcome: a failed fetch must not wedge
                 # the queue head forever (the file stays on the card).

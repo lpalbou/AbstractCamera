@@ -45,6 +45,12 @@ Repository = "https://github.com/lpalbou/abstractcamera"
 [project.scripts]
 abstractcamera = "abstractcamera.cli:main"
 
+# Optional AbstractCore capability plugin (ADR 0012): inert unless
+# abstractcore is installed — only AbstractCore reads this entry point group,
+# and the module imports nothing from abstractcore at load time.
+[project.entry-points."abstractcore.capabilities_plugins"]
+abstractcamera = "abstractcamera.integrations.abstractcore_plugin:register"
+
 [project.optional-dependencies]
 # Tethered PTP camera control via libgphoto2 (Nikon Z, Sony Alpha, generic
 # PTP bodies). Floor 2.5.10: the single-config widget API is a HARD Sony
@@ -84,6 +90,7 @@ packages = [
   "abstractcamera",
   "abstractcamera.adapters",
   "abstractcamera.drivers",
+  "abstractcamera.integrations",
   "abstractcamera.sim",
 ]
 

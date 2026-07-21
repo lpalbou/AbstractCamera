@@ -279,7 +279,8 @@ class WorkerLoopMixin:
                         with self._state_lock:
                             head = self._pending_downloads[0] if self._pending_downloads else None
                         if head is not None:
-                            self._download_one_pending(camera, head[0], head[1])
+                            self._download_one_pending(camera, head[0], head[1],
+                                                       trigger_id=head[3])
                             with self._state_lock:
                                 if self._pending_downloads and self._pending_downloads[0] == head:
                                     self._pending_downloads.popleft()
@@ -398,6 +399,15 @@ class WorkerLoopMixin:
                 self._connected = False
                 self._liveview_running = False
                 self._measured_fps = 0.0
+                # Watchdog deaths exit through here WITHOUT a disconnect()
+                # call, and used to retain the last frame + a full preview
+                # ring (up to 150 JPEGs) on the corpse until process exit
+                # (adversarial finding 2026-07-21). Clear the frame state on
+                # EVERY worker exit; disconnect()'s own clearing stays as the
+                # explicit-path mirror. Events deliberately survive — the
+                # log is the post-mortem record (bounded deque).
+                self._latest_frame = None
+                self._preview_ring.clear()
 
     def _route_adapter_event(self, camera, event_type, event_data) -> None:
         """Event sink handed to the adapter at attach(): events pumped inside

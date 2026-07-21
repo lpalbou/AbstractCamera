@@ -86,6 +86,16 @@ device's own refusal. Run `request_action("calibrate")` once under open
 sky first (`no GOTO has run yet` names the same gap), check the target is
 above the horizon, and mind the mount limit warnings in the catch log.
 
+**`deletion refused: ... is not dwarf_3's own storage`**
+The volume you pointed `download --delete` at does not present the
+camera's own hardware identity (the DWARF's USB storage mode reports
+`File-Stor Gadget`; your volume reports its drive/reader identity). It is
+most likely a personal drive or a BACKUP COPY of the card — folder
+contents cannot prove otherwise, so deletion is refused there by design.
+Copying from it works. To free the actual card, plug the camera itself
+and enable its USB storage mode. Note a card in a USB reader also
+refuses, deliberately: fail-safe beats convenience.
+
 **Simulated camera in tests without env vars**
 `CameraManager(driver=FakeDriver(abstractcamera.sim.gphoto2))` — the
 injection seam used by the package's own suites.

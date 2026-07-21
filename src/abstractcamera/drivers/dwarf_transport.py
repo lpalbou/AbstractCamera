@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import socket
 import threading
 import urllib.request
@@ -294,6 +295,45 @@ class DwarfTransport:
                 last_error = exc
         raise CameraControlError(
             f"Downloading {file_path} from the DWARF failed: {last_error}")
+
+    def fetch_media_to(self, file_path: str, local_path: str) -> None:
+        """Streamed download of one album file to disk (multi-GB FITS/MP4
+        must never be buffered whole in RAM)."""
+        path = "/" + file_path.strip().lstrip("/")
+        last_error: Exception | None = None
+        for port in (self.media_port, self.api_port):
+            url = f"http://{self.host}:{port}{path}"
+            try:
+                with urllib.request.urlopen(url, timeout=max(self.timeout_s, 60.0)) as response:
+                    with open(local_path, "wb") as out:
+                        shutil.copyfileobj(response, out, length=512 * 1024)
+                return
+            except Exception as exc:
+                last_error = exc
+        raise CameraControlError(
+            f"Downloading {file_path} from the DWARF failed: {last_error}")
+
+    def album_delete(self, items: list[dict]) -> None:
+        """Delete album entries on the device (API v2 /album/delete). Each
+        item needs the album listing's filePath/fileName/mediaType."""
+        payload = {"datas": [{
+            "mediaType": int(item.get("mediaType", 0)),
+            "filePath": str(item.get("filePath", "")),
+            "fileName": str(item.get("fileName", "")),
+        } for item in items]}
+        url = f"http://{self.host}:{self.api_port}/album/delete"
+        response = self._http_json(url, payload)
+        if int(response.get("code", -1)) != 0:
+            raise CameraControlError(
+                f"The DWARF refused the album delete (code {response.get('code')}).")
+        results = response.get("data")
+        if isinstance(results, list):
+            failed = [entry.get("fileName") or entry.get("filePath")
+                      for entry in results
+                      if isinstance(entry, dict) and entry.get("isSuccess") is False]
+            if failed:
+                raise CameraControlError(
+                    f"The DWARF could not delete: {', '.join(map(str, failed))}")
 
     # -- live view ---------------------------------------------------------------
     def rtsp_url(self, channel: int = 0) -> str:

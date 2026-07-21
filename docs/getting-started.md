@@ -82,6 +82,32 @@ time — close the DWARFLAB app (or release control there) or connect()
 refuses with exactly that message. Hardware smoke test:
 `python3 scripts/validate_dwarf.py` (mount motion strictly opt-in).
 
+## Download everything a device holds
+
+`abstractcamera download` is one operation across devices (ADR 0011):
+list the device's media, copy what is missing locally (size-verified,
+re-runs skip), and — only with `--delete` — free the device afterwards.
+
+```bash
+abstractcamera download                    # auto-detect a USB-mounted card -> ~/Pictures/<device>/
+abstractcamera download --host 192.168.1.57  # the DWARF album over Wi-Fi instead
+abstractcamera download --delete           # ... then free the device (verified copies only)
+abstractcamera download --delete --delete-calibrations  # also remove the darks/bias/flats
+abstractcamera download --dry-run --delete # show the whole plan, touch nothing
+```
+
+For the DWARF over USB-C, enable storage mode in the DWARFLAB app first
+(the microSD mounts as a USB volume; USB-C is files-only — piloting stays
+on Wi-Fi, above). The safety rules live in ONE engine for every device:
+`--delete` removes ONLY media whose local copy verified in size at delete
+time; the calibration library (`Astronomy/CALI_FRAME` — darks/bias/flats
+the device uses for stacking) is always DOWNLOADED but is deleted only
+with the explicit extra flag `--delete-calibrations` (the device would
+have to re-shoot darks); device system files always stay. In code:
+`sync_store(FilesystemMediaStore(...) | DwarfAlbumMediaStore(host), dest)`.
+PTP-card stores (Sony/Nikon bodies) are the named next adapters on the
+same engine.
+
 ## Live view, dials, capture
 
 ```python
@@ -152,6 +178,36 @@ manager.start_interval_sequence(interval_s=5.0, count=100, start_delay_s=10)
 manager.set_rolling_buffer(True, seconds=10)
 clip = manager.save_rolling_clip()      # "keep the last N seconds" -> MP4 ([clips])
 ```
+
+## Drive cameras from AbstractCore / an AI agent
+
+Installing abstractcamera beside `abstractcore` registers the `camera`
+capability automatically (ADR 0012 — nothing to configure). The tool set
+lets an LLM pilot cameras:
+
+```python
+from abstractcore import create_llm
+from abstractcamera.integrations.abstractcore_tools import camera_tools
+
+llm = create_llm("lmstudio", model="qwen/qwen3-4b")
+response = llm.generate(
+    "Open the default camera and take a photo when something moves.",
+    tools=camera_tools(),
+)
+```
+
+The eleven `camera_*` tools cover discovery, open/close, silent live-view
+preview (`camera_preview_photo` — look without firing the shutter), photo,
+bounded video, motion/lightning/meteor detection with auto-capture, and
+event polling with an explicit cursor contract (`session` epoch +
+`evicted` signal — see [api.md](api.md) § AbstractCore integration).
+`CAMERA_TOOL_CLASSIFICATION` declares which tools capture the physical
+environment — approval layers gate those by default (user-overridable).
+
+To wake a parked workflow on movement instead of polling, run the
+sentinel: `abstractcamera watch --gateway http://127.0.0.1:8080
+--mailbox camera --detect motion` — detection/capture events arrive as
+durable gateway events for any run declaring the mailbox.
 
 ## Camera-less development
 
