@@ -304,8 +304,28 @@ class _AbstractCameraCapability:
             include_bytes=include_bytes,
         )
 
-    def stop_recording(self, camera: Optional[str] = None, *, timeout_s: Optional[float] = None, **_: Any) -> Dict[str, Any]:
-        return self._unwrap(self._service.stop_recording(camera, timeout_s=timeout_s))
+    def stop_recording(
+        self,
+        camera: Optional[str] = None,
+        *,
+        timeout_s: Optional[float] = None,
+        artifact_store: Any = None,
+        run_id: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        include_bytes: bool = False,
+        **_: Any,
+    ) -> Dict[str, Any]:
+        # Same payload lane as capture_video (adversarial P2 2026-07-21:
+        # the asymmetry gave store-holding hosts bare-path media for
+        # detection-started recordings while capture_video got refs).
+        out = self._unwrap(self._service.stop_recording(camera, timeout_s=timeout_s))
+        return self._attach_capture_payload(
+            out,
+            artifact_store=artifact_store,
+            run_id=run_id,
+            tags=tags,
+            include_bytes=include_bytes,
+        )
 
     def preview_frame(
         self,
@@ -397,6 +417,13 @@ class _AbstractCameraCapability:
                 run_id=run_id,
                 tags=tags,
             )
+            # Sight-lane override (commons 3969/4089 ruling): with a store
+            # present, `media` carries the $artifact ref — the durable
+            # currency runtime's llm_client already resolves — instead of
+            # the bare path the service degraded to. One ref spelling
+            # ($artifact), dict-shaped items; the `artifact` key stays for
+            # existing consumers.
+            out["media"] = [dict(out["artifact"])]
         return out
 
     # -- detection ------------------------------------------------------------

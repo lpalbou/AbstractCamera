@@ -224,6 +224,18 @@ class ToolExecution(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertIn("No video recording", result.error)
 
+    def test_tool_results_carry_bare_path_media(self):
+        """Sight lane through the TOOL lane (commons 3969/4089): tool
+        results carry handler-authored `media` as bare paths (no artifact
+        store in-process — runtime's executor half may lift them)."""
+        self._run("camera_open")
+        photo = self._run("camera_capture_photo")
+        self.assertTrue(photo.success, photo.error)
+        self.assertEqual(photo.output.get("media"), [photo.output["path"]])
+        preview = self._run("camera_preview_photo")
+        self.assertTrue(preview.success, preview.error)
+        self.assertEqual(preview.output.get("media"), [preview.output["path"]])
+
     def test_preview_photo_looks_without_shooting(self):
         """The eleventh tool (roadmap 2026-07-21): a silent live-view frame
         — file lands under the capture root, NO capture events log (the

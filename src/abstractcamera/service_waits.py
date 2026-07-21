@@ -121,14 +121,22 @@ def wait_for_capture(
             if kind in ("photo", "photo-pending", "error") and _stale(event):
                 continue
             if kind == "photo":
-                return _ok(
-                    {
-                        "kind": what,
-                        "path": event.get("path"),
-                        "on_device": False,
-                        "event": _public_event(event),
-                    }
-                )
+                path = event.get("path")
+                out = {
+                    "kind": what,
+                    "path": path,
+                    "on_device": False,
+                    "event": _public_event(event),
+                }
+                # The ruled sight-lane field (commons 3969/4089): results
+                # that landed a LOCAL FILE carry handler-authored `media`
+                # so the agent adapter's fold can put the image in front of
+                # the model — bare path on the storeless lane ($artifact
+                # refs are the plugin's override). ABSENT when no file
+                # landed; never sniffed from prose.
+                if path:
+                    out["media"] = [path]
+                return _ok(out)
             if kind == "photo-pending" and pending_meaning == "on_device":
                 return _ok(
                     {

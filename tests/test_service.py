@@ -605,6 +605,87 @@ class Events(ServiceHarness):
         finally:
             manager.disconnect()
 
+    def test_capture_results_carry_the_sight_lane_media_field(self):
+        """Operator-ruled sight lane (commons 3969/4089): results that
+        landed a LOCAL file carry handler-authored `media` (bare path on
+        the storeless lane); results with no local file carry NO media key
+        — an absent field is the honest shape, never an empty list."""
+        self.service.open()
+        photo = self.service.capture_photo()
+        self.assertTrue(photo["success"], photo)
+        self.assertEqual(photo.get("media"), [photo["path"]])
+
+        preview = self.service.preview_photo(wait_s=5.0)
+        self.assertTrue(preview["success"], preview)
+        self.assertEqual(preview.get("media"), [preview["path"]])
+
+        # Deferred (armed auto-fire): no local file yet -> no media key.
+        armed = self.service.start_detection(action="photo", target="motion")
+        self.assertTrue(armed["success"], armed)
+        deferred = self.service.capture_photo()
+        self.assertTrue(deferred["success"], deferred)
+        self.assertTrue(deferred.get("deferred"))
+        self.assertNotIn("media", deferred,
+                         "no local file landed — the media key must be absent")
+        self.service.stop_detection()
+        # The deferred file flushes asynchronously at disarm; the backlog
+        # guard refuses new captures until it drains.
+        manager = self.service.hub.manager_for(None)
+        deadline = time.time() + 10.0
+        while time.time() < deadline and manager.status()["downloads_pending"] > 0:
+            time.sleep(0.05)
+        self.assertEqual(manager.status()["downloads_pending"], 0)
+
+        # On-device save policy: the shot stays on the camera -> no media.
+        manager.set_save_policy(download_locally=False)
+        on_device = self.service.capture_photo()
+        self.assertTrue(on_device["success"], on_device)
+        self.assertTrue(on_device.get("on_device"))
+        self.assertNotIn("media", on_device,
+                         "on-device results must not carry media")
+        manager.set_save_policy(download_locally=True)
+
+    def test_video_results_carry_media_when_the_file_lands(self):
+        """The video lane rides the same wait branch (what='video' is a
+        label), but the sim's movie profile keeps files on-card — so the
+        file-lands lane is pinned via an injected photo event through
+        _stop_and_collect's wait (adversarial P2 2026-07-21: claimed in the
+        CHANGELOG, previously untested)."""
+        from abstractcamera.service_waits import wait_for_capture
+
+        class StubManager:
+            def __init__(self):
+                self.events = [
+                    {"id": 2, "kind": "photo", "reason": "captured",
+                     "path": "/tmp/movie.mp4", "trigger_id": 5},
+                ]
+
+            def get_events(self, since_id=0):
+                return [dict(e) for e in self.events if e["id"] > since_id]
+
+            def status(self):
+                return {"connected": True}
+
+        result = wait_for_capture(
+            StubManager(), watermark=1, timeout_s=2.0,
+            pending_meaning=None, what="video", min_trigger_id=5,
+        )
+        self.assertTrue(result["success"], result)
+        self.assertEqual(result["media"], ["/tmp/movie.mp4"])
+
+        # And the undelivered fallback (recording confirmed, file never
+        # announced) must NOT carry media — capture_video's timeout shape.
+        class StubManagerNoFile(StubManager):
+            def __init__(self):
+                self.events = []
+
+        timed_out = wait_for_capture(
+            StubManagerNoFile(), watermark=0, timeout_s=0.3,
+            pending_meaning=None, what="video",
+        )
+        self.assertFalse(timed_out["success"])
+        self.assertNotIn("media", timed_out)
+
     def test_detection_metrics_ride_events(self):
         """Detector metrics must reach consumers structured, not prose-only
         (adversarial 2026-07-21)."""

@@ -26,6 +26,18 @@ see?"; camera_capture_photo actuates the physical shutter for a real
 full-resolution capture. Both record the surroundings and default to
 require-approval.
 
+SIGHT LANE (operator-ruled, commons 3969/4089): capture/preview results
+that landed a local file carry a handler-authored `media` list — bare
+paths on this storeless tool lane (the capability plugin overrides with
+`{"$artifact": id}` refs when an artifact store is present). The field is
+AUTHORED at the source, never sniffed from prose, and ABSENT when no
+local file landed (deferred, on-device, and undelivered results alike).
+Agent adapters fold it into the next model call so the agent SEES what
+it shot. Deliberately out of scope: get_events rows (a busy auto-fire
+page would fold N images against caps designed for single tool results)
+— detection captures enter the sight lane when the agent reads the
+event's path and looks at it explicitly.
+
 Classification (the facts this package owns about its OWN tools, in core's
 inventory vocabulary plus one domain tag, ruled per
 decision:domain-tool-classification-tags):

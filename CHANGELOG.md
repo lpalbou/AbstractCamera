@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Sight lane: capture results carry the ruled `media` field (backlog
+  0019, operator GO c4089).** Camera's half of the cross-package
+  "agents see what they shoot" lane: every result that lands a LOCAL file
+  (capture_photo, capture_video, stop_recording, preview_photo) carries a
+  handler-authored `media` list — bare paths on the storeless tool lane,
+  `{"$artifact": id}` refs on the capability lane when an artifact store
+  is present (`$artifact` is the one ref spelling; the `artifact` key
+  stays for existing consumers). The field is ABSENT when no local file
+  landed (deferred/on-device/undelivered results) and is authored at the
+  source, never sniffed from prose. Agent's adapter fold + runtime's
+  executor half consume it (their lanes); until they land, the field
+  rides results harmlessly.
 - **Adversarial pass on the whole wave (operator-mandated, one subagent —
   2 P1 / 8 P2, all folded + test-pinned; ADR 0013 § Adversarial folds).**
   The P1 theme: correct correlation/epoch PRODUCERS with two CONSUMERS

@@ -262,6 +262,9 @@ class CapabilityContract(PluginHarness):
         json.dumps(result)
         self.assertTrue(base64.b64decode(result["data_b64"]))
         self.assertTrue(result["content_type"])
+        # include_bytes WITHOUT a store: the service's bare-path media
+        # survives (no ref to override with).
+        self.assertEqual(result.get("media"), [result["path"]])
 
     def test_artifact_store_receives_capture(self):
         self.capability.open()
@@ -273,6 +276,19 @@ class CapabilityContract(PluginHarness):
         self.assertEqual(ref["$artifact"], "art-0001")
         self.assertEqual(ref["size_bytes"], len(store.saved[0]["content"]))
         self.assertTrue(ref["filename"])
+        # Sight lane (commons 3969/4089): with a store present, `media`
+        # carries the $artifact ref (the durable currency runtime's
+        # llm_client resolves), overriding the service's bare path.
+        self.assertEqual(len(result["media"]), 1)
+        self.assertEqual(result["media"][0]["$artifact"], "art-0001")
+
+    def test_media_field_degrades_to_bare_path_without_a_store(self):
+        """Sight lane storeless degradation (the ruled contract): no
+        artifact store -> `media` is the bare local path list."""
+        self.capability.open()
+        result = self.capability.capture_photo()
+        self.assertTrue(result.get("path"))
+        self.assertEqual(result.get("media"), [result["path"]])
 
     def test_preview_frame_bytes_and_artifact_modes(self):
         self.capability.open()

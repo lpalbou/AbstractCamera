@@ -275,6 +275,10 @@ class CameraService:
             {
                 "camera": camera or self._hub.active_uid,
                 "path": path,
+                # The ruled sight-lane field (commons 3969/4089): the saved
+                # frame is exactly what "show me what you see" wants folded
+                # into the next model call.
+                "media": [path],
                 "size_bytes": len(jpeg),
                 "sequence": result.get("sequence"),
                 "content_type": "image/jpeg",
