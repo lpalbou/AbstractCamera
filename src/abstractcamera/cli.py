@@ -45,33 +45,12 @@ def main(argv: list[str] | None = None) -> int:
                                "for stacking; re-shooting them costs a session)")
     download.add_argument("--dry-run", action="store_true",
                           help="show what would happen; touch nothing")
-    watch = sub.add_parser(
-        "watch",
-        help="sentinel: arm detection and forward camera events to an AbstractGateway mailbox",
-        description=(
-            "Opens a camera, optionally arms detection, and forwards catch-log "
-            "events (detections with metrics, capture file paths, errors) as "
-            "DURABLE gateway events — parked workflows/entities declaring the "
-            "mailbox wake on movement instead of polling. Cursors persist "
-            "across restarts; delivery is deduplicated by the gateway command "
-            "store. Ctrl-C stops, disarms, and releases the camera."))
-    watch.add_argument("--camera-id", default=None, help="id from `abstractcamera list` (default device when omitted)")
-    watch.add_argument("--gateway", default="http://127.0.0.1:8080", help="gateway base URL")
-    watch.add_argument("--mailbox", default="camera", help="event name + global-scope session id (the rendezvous)")
-    watch.add_argument("--token", default=None, help="bearer token (default: $ABSTRACTGATEWAY_AUTH_TOKEN)")
-    watch.add_argument("--detect", default="motion", choices=["motion", "lightning", "meteor", "none"],
-                       help="detection target to arm (none = forward events only)")
-    watch.add_argument("--action", default="photo", choices=["photo", "video", "monitor"],
-                       help="what detection does on a hit (monitor = log only)")
-    watch.add_argument("--sensitivity", type=float, default=None, help="0-100 (default 50)")
-    watch.add_argument("--kinds", default=None,
-                       help="comma-separated event kinds to forward "
-                            "(default: detection,photo,photo-pending,clip,error)")
-    watch.add_argument("--poll-interval", type=float, default=1.0, help="seconds between event polls")
-    watch.add_argument("--state-file", default=None,
-                       help="cursor persistence path (default: ~/.abstractcamera/"
-                            "gateway_bridge_<mailbox>.json; concurrent sentinels on ONE "
-                            "mailbox need distinct paths)")
+    # The `watch` sentinel daemon was REMOVED (operator ruling 2026-07-21,
+    # dm:camera--laurent#14): abstractcamera is a dependency of abstractcore
+    # and must never reach UP to the gateway. Detection runs in-process and
+    # its events are readable through the capability's event API; the
+    # wake-on-motion PRODUCER belongs at a framework entry (core/gateway) or
+    # a flow that consumes that API, not in a library-shipped daemon.
     args = parser.parse_args(argv)
 
     if args.command == "list":
@@ -98,13 +77,6 @@ def main(argv: list[str] | None = None) -> int:
         from abstractcamera.media_sync import run_cli
 
         return run_cli(args)
-
-    if args.command == "watch":
-        if args.detect == "none":
-            args.detect = None
-        from abstractcamera.gateway_bridge import run_watch_cli
-
-        return run_watch_cli(args)
 
     if args.command == "preview":
         from abstractcamera import CameraManager

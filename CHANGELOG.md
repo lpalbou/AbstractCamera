@@ -2,6 +2,75 @@
 
 ## Unreleased
 
+- **`standing_effect` fact declared (tool-tiers item-D ruled vocabulary,
+  2026-07-23).** `CAMERA_TOOL_CLASSIFICATION` grows the fourth ruled fact:
+  true ONLY for `camera_start_detection` — camera's one STANDING authority
+  (auto-fire keeps shooting after the call returns; one approval covers
+  unbounded future shutters). Grant layers key revocation-on-tighten
+  semantics on it (host revokes via `camera_stop_detection` — adopted in
+  the tiers design, c4444 — because no per-shot gate exists by
+  construction). The approval partition is UNCHANGED by its arrival (the
+  standing tool already asked via `captures_environment`; pinned).
+  `captures_environment` was promoted to the framework-shared fact
+  vocabulary UNCHANGED by the same naming pass. The fact→risk-tier
+  derivation itself lands core-side (one versioned mapping, the converged
+  tiers design); camera declares facts, never stores a derived integer.
+
+- **Camera tools flow THROUGH core (operator layering ruling, dm#16-20).**
+  Laurent, verbatim: "THE ONLY PACKAGE THAT CAN AND SHOULD IMPORT ABSTRACT
+  CAMERA IS ABSTRACT CORE." The plugin's `register()` now contributes
+  `camera_tool_definitions()` via core's `register_capability_tools` and
+  `camera_tool_approval_defaults()` via `register_capability_tool_policy`
+  (duck-typed — older cores without the surface still register the
+  backend; contribution failure never breaks capability registration).
+  AbstractRuntime dropped its direct `abstractcamera` import the same
+  night: its default toolset + `ToolApprovalPolicy` fold now read
+  `abstractcore.capabilities.capability_tools("camera")` /
+  `capability_tool_policy("camera")` exclusively, pinned runtime-side by a
+  grep-grade zero-imports test. Explicit direct import of
+  `integrations.abstractcore_tools` remains supported for hosts below
+  core; nothing above core may use it. A fable5 adversary red-teamed the
+  lane (verdict: ship with fixes; both P1s folded same night): core's
+  one-time plugin load is now lock-serialized (a reader racing the first
+  load used to silently answer empty for an installed capability) and
+  runtime's approval fold is CONTAINED to the names the capability
+  actually serves (an unscoped "camera" policy naming `write_file` would
+  have escalated it past approval process-wide — foreign names now drop
+  with a #FALLBACK warn). The plugin's tool-contribution failure path
+  logs one #FALLBACK instead of a bare pass (a phantom
+  present-but-broken was undiagnosable), and the first-call plugin-load
+  cost (~0.9s, all installed capability plugins register once per
+  process) is documented as the accepted price of the layering.
+- **Capture-lifecycle hardening (operator-ordered two-adversary pass,
+  2026-07-21; findings folded + pinned).** The surviving fixes (the
+  `abstractcamera watch` sentinel that half of this wave targeted was
+  DELETED later the same day — see "Detection → event API" below — so its
+  bridge-only fixes died with it): (a) NO lifecycle path stopped a running
+  recording — close/close_all/atexit left PTP bodies recording until the
+  card filled and silently lost webcam MP4s into temp dirs; the worker's
+  shutdown now toggles the recording off and drains the movie file before
+  the final flush (making the atexit claim true), and `stop_detection`
+  names a recording that survives disarm with the `stop_recording()`
+  escape hatch. (b) `start_detection(action="video")` preflights movie
+  availability (webcam without `[clips]` used to arm and then fail every
+  detection all night); `close` harvests shutdown-flushed capture paths
+  into `flushed_paths` + `media` (files used to land with no way to learn
+  their paths); the detection watermark is snapshotted BEFORE arming (a
+  detection in the gap was silently below the cursor); teaching surfaces
+  disclose that monitor-mode motion/meteor detections still save ring
+  clips to disk, and sight-lane docs state the agent fold is in flight
+  rather than landed. (The sentinel unplug-reopen/re-arm fix was in
+  `gateway_bridge.py` and died with the deleted daemon; a future
+  entry-side producer rebuilds it from the public event API.)
+- **Camera env gate REMOVED (operator ruling, dm#10).** Laurent, verbatim:
+  "i don't like those stupid variables, remove it! there is a reason why
+  EACH APP can decide which tools run, STOP DUPLICATING gating."
+  `ABSTRACT_ENABLE_CAMERA_TOOLS` is dead: abstractcamera installed beside
+  abstractruntime registers the camera toolset unconditionally (runtime
+  tree; owner-approved), and exposure/consent stay in the per-app
+  mechanisms — allowed_tools/run tool configs, tool_policy, gateway walls,
+  and the classification's ask-by-default capture verbs. Gateway's
+  surfacing pins re-based to installed/absent arms.
 - **Sight lane: capture results carry the ruled `media` field (backlog
   0019, operator GO c4089).** Camera's half of the cross-package
   "agents see what they shoot" lane: every result that lands a LOCAL file
@@ -13,7 +82,13 @@
   landed (deferred/on-device/undelivered results) and is authored at the
   source, never sniffed from prose. Agent's adapter fold + runtime's
   executor half consume it (their lanes); until they land, the field
-  rides results harmlessly.
+  rides results harmlessly. CLOSED 2026-07-22: the consumer fold LANDED
+  (agent receipt c4133) and the whole lane is LIVE-PROVEN — flow's
+  adversary authored a gateway-hosted agent flow that captured a real
+  JPEG through `camera_capture_photo` and the model described the actual
+  room (c4193); core confirmed contract fit from the `analyze_media`
+  re-look side (c4269). The "models do not yet see these images" caveat
+  is retired from the docs and tool teaching.
 - **Adversarial pass on the whole wave (operator-mandated, one subagent —
   2 P1 / 8 P2, all folded + test-pinned; ADR 0013 § Adversarial folds).**
   The P1 theme: correct correlation/epoch PRODUCERS with two CONSUMERS
@@ -26,18 +101,23 @@
   bridge fatal-auth honesty; per-mailbox cursor files; CLI input hygiene;
   fail-fast preview on dead cameras; `session` in public status; honest
   hub connect docstring.
-- **Camera → gateway event bridge: the sentinel lane (backlog 0016).**
-  New `abstractcamera watch` verb + `gateway_bridge.py`: a standalone
-  process opens a camera, arms detection, and forwards catch-log events as
-  DURABLE AbstractGateway events (`POST /api/gateway/commands`,
-  type=emit_event, global-scope mailbox) — parked workflows/entities
-  declaring the mailbox WAKE on movement instead of polling
-  `camera_get_events` with model turns. Delivery is at-least-once toward
-  the gateway and exactly-once past its command store (command_id derived
-  from mailbox+camera+session+event id — crash replays dedupe as
-  `duplicate: true`, live-verified against a running gateway); cursors
-  persist per (camera, session epoch) and reset honestly when the camera
-  reconnects; stdlib-only HTTP.
+- **Detection → event API, wake-on-motion re-scoped (backlog 0016;
+  operator ruling dm#14).** An earlier iteration shipped an `abstractcamera
+  watch` sentinel daemon + `gateway_bridge.py` that posted camera events to
+  the gateway's command API. That was an ARCHITECTURE ERROR and was
+  REMOVED: abstractcamera is a dependency of abstractcore and must never
+  reach UP to the gateway (the daemon hardcoded `/api/gateway/commands`, the
+  `emit_event` shape, and the wait-key convention — two layers up — and was
+  launchable by nobody in the gateway-first operating model). What stays is
+  the legitimate half: detection runs in-process and its events are readable
+  through the capability's own event API (`camera_get_events`,
+  `detection_events`, `/v1/camera/events`) with the cursor contract below.
+  The wake-on-motion PRODUCER belongs at a framework entry — a
+  gateway-hosted durable run or a flow that holds a camera open through the
+  capability and emits via the gateway's OWN `emit_event`; a flow
+  `wait_event`/`on_event` node is the proven consumer. Deleted:
+  `gateway_bridge.py`, the `watch` CLI verb, `tests/test_gateway_bridge.py`.
+  abstractcamera now holds zero gateway-API knowledge.
 - **Event-log wire contract (backlog 0015).** The event log is an API for
   LLM/workflow consumers now, so the contract is explicit: `get_events`
   responses carry `session` (the id-space epoch — a new value means the

@@ -77,10 +77,31 @@ class ToolDefinitions(unittest.TestCase):
         self.assertEqual(tool_names, classified)
         for name, facts in CAMERA_TOOL_CLASSIFICATION.items():
             self.assertEqual(
-                {"mutating", "remote_write_capable", "captures_environment"},
+                # standing_effect joined with the tool-tiers item-D ruled
+                # vocabulary (schema v3; adopted c4497).
+                {"mutating", "remote_write_capable", "captures_environment", "standing_effect"},
                 set(facts.keys()),
                 f"classification facts drifted for {name}",
             )
+
+    def test_standing_effect_marks_exactly_the_standing_authority(self):
+        """Item-D ruled fact (schema v3): standing_effect is TRUE only for
+        camera_start_detection — the one tool that arms an ongoing process
+        (auto-fire) that keeps acting after the call returns. Grant layers
+        key revocation-on-tighten semantics on this fact (adopted c4444),
+        so a drift in either direction misroutes revocation duties."""
+        from abstractcamera.integrations.abstractcore_tools import camera_tool_approval_defaults
+
+        for name, facts in CAMERA_TOOL_CLASSIFICATION.items():
+            expected = name == "camera_start_detection"
+            self.assertEqual(facts["standing_effect"], expected, name)
+        # The fact's arrival must NOT move the approval partition: the only
+        # standing tool already asked via captures_environment.
+        defaults = camera_tool_approval_defaults()
+        self.assertEqual(
+            ["camera_get_events", "camera_list_devices", "camera_status"],
+            defaults["auto_approve"],
+        )
 
     def test_capture_tools_declare_environment_capture(self):
         for name in ("camera_preview_photo", "camera_capture_photo", "camera_capture_video",
@@ -223,6 +244,30 @@ class ToolExecution(unittest.TestCase):
         result = self._run("camera_stop_recording")
         self.assertFalse(result.success)
         self.assertIn("No video recording", result.error)
+
+    def test_import_weight_stays_light(self):
+        """Load-bearing framework-wide since registration went unconditional
+        (adversary F2 2026-07-21: every get_default_toolsets() call now pays
+        this import, and the lightness claim was asserted in docstrings but
+        never pinned): importing the tools module must NOT load the camera
+        stack — OpenCV/numpy load on first tool CALL, not at listing time."""
+        import subprocess
+        import sys
+
+        probe = (
+            "import sys\n"
+            "import abstractcamera.integrations.abstractcore_tools\n"
+            "heavy = [m for m in ('cv2', 'numpy', 'abstractcamera.service',\n"
+            "                     'abstractcamera.camera_manager')\n"
+            "         if m in sys.modules]\n"
+            "print('HEAVY:' + ','.join(heavy))\n"
+        )
+        proc = subprocess.run([sys.executable, "-c", probe],
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        line = [ln for ln in proc.stdout.splitlines() if ln.startswith("HEAVY:")][-1]
+        self.assertEqual(line, "HEAVY:",
+                         f"importing the tools module must stay light, loaded: {line}")
 
     def test_tool_results_carry_bare_path_media(self):
         """Sight lane through the TOOL lane (commons 3969/4089): tool

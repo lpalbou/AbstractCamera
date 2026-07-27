@@ -142,6 +142,99 @@ class RegistryIntegration(unittest.TestCase):
         self.assertTrue(info.description)
         self.assertTrue(info.config_hint)
 
+    def test_register_contributes_tools_through_core(self):
+        """The layering ruling (laurent dm#16-20): runtime/gateway reach
+        camera tools THROUGH core, never by importing this package. The
+        plugin's register() must therefore contribute the full tool set via
+        core's register_capability_tools — served with callables intact so a
+        host composes them without importing abstractcamera."""
+        from abstractcamera.integrations.abstractcore_tools import camera_tool_definitions
+
+        served = self.registry.capability_tools("camera")
+        expected = {d.name for d in camera_tool_definitions()}
+        self.assertEqual({t.name for t in served}, expected)
+        self.assertEqual(len(served), len(expected))
+        for t in served:
+            self.assertTrue(callable(getattr(t, "function", None)), f"{t.name} lost its callable")
+
+    def test_register_contributes_approval_policy_through_core(self):
+        """The plugin registers the approval PARTITION it derives from its own
+        classification (derive-never-copy: plugin = authority, core = carrier,
+        runtime folds). Served policy must equal camera_tool_approval_defaults()
+        exactly — byte-drift here would silently re-partition consent."""
+        from abstractcamera.integrations.abstractcore_tools import camera_tool_approval_defaults
+
+        served = self.registry.capability_tool_policy("camera")
+        authority = camera_tool_approval_defaults()
+        self.assertEqual(set(served.get("auto_approve") or []), set(authority["auto_approve"]))
+        self.assertEqual(
+            set(served.get("require_approval") or []), set(authority["require_approval"])
+        )
+
+    def test_register_contributes_risk_facts_through_core(self):
+        """Tool-tiers build (schema v3): the plugin declares its risk FACTS
+        through core's register_capability_tool_facts — plugins declare
+        facts, core derives the tier through the one versioned mapping;
+        camera never stores a derived integer. Served facts must equal the
+        classification exactly (drift here re-ranks tools silently), and
+        core's derivation over them must reproduce camera's cycle-1 dry-run
+        (capture verbs outreach/3, read-only verbs observe/1)."""
+        from abstractcamera.integrations.abstractcore_tools import CAMERA_TOOL_CLASSIFICATION
+
+        served = self.registry.capability_tool_facts("camera")
+        self.assertEqual(served, CAMERA_TOOL_CLASSIFICATION)
+        try:
+            from abstractcore.tools.risk_facts import derive_risk
+        except ImportError:
+            self.skipTest("this abstractcore predates the risk mapping")
+        capture = derive_risk(served["camera_capture_photo"])
+        readonly = derive_risk(served["camera_list_devices"])
+        self.assertEqual((capture.band, capture.rank), ("outreach", 3))
+        self.assertEqual((readonly.band, readonly.rank), ("observe", 1))
+
+    def test_register_survives_a_core_without_the_tools_surface(self):
+        """Older cores (no register_capability_tools / policy surface) still
+        get the capability backend — tool contribution is best-effort
+        surfacing, never a registration breaker."""
+
+        class _MinimalRegistry:
+            def __init__(self):
+                self.backends = []
+
+            def register_backend(self, **kwargs):
+                self.backends.append(kwargs)
+
+        minimal = _MinimalRegistry()
+        register(minimal)
+        self.assertEqual(len(minimal.backends), 1)
+        self.assertEqual(minimal.backends[0]["capability"], "camera")
+
+    def test_contribution_failure_registers_backend_and_warns(self):
+        """Adversary P2-2: a raising tool contribution used to vanish into a
+        bare `except: pass` — backend registered, tools absent, ZERO record
+        anywhere (core's plugin_errors stays empty because register()
+        swallowed before core could see). The degradation must log one
+        #FALLBACK naming the consequence so a phantom present-but-broken is
+        diagnosable."""
+
+        class _RaisingToolsRegistry:
+            def __init__(self):
+                self.backends = []
+
+            def register_backend(self, **kwargs):
+                self.backends.append(kwargs)
+
+            def register_capability_tools(self, capability, tools):
+                raise RuntimeError("simulated contribution failure")
+
+        raising = _RaisingToolsRegistry()
+        with self.assertLogs("abstractcamera.integrations.abstractcore_plugin", level="WARNING") as logs:
+            register(raising)
+        self.assertEqual(len(raising.backends), 1, "backend registration must survive")
+        joined = "\n".join(logs.output)
+        self.assertIn("#FALLBACK", joined)
+        self.assertIn("capability_tools('camera')", joined)
+
     def test_generic_discovery_routes_work_unchanged_on_todays_core(self):
         providers = self.registry.available_providers("camera")
         self.assertTrue(any(p["provider_id"] == "fake" for p in providers))

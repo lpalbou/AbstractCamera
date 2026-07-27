@@ -276,10 +276,9 @@ class CameraManager(WorkerLoopMixin, ConfigLedgerMixin, CaptureOpsMixin,
             # keeping old events made the contract lie on the direct-manager
             # reconnect path (hub re-opens build fresh managers, but
             # get_default_manager()/host-held managers reconnect in place):
-            # consumers told to reset cursors on an epoch change would
-            # re-read the OLD session's events as new — and the gateway
-            # bridge would re-emit them under fresh command ids (the epoch
-            # is in the hash), double-waking listeners with history. The
+            # a consumer told to reset its cursor on an epoch change would
+            # re-read the OLD session's events as new (and any event
+            # PRODUCER keyed on these ids would re-deliver history). The
             # corpse log stays readable up to the moment a new session
             # starts; then it belongs to the new epoch entirely.
             self._events.clear()

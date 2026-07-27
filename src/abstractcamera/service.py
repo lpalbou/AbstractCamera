@@ -169,13 +169,31 @@ class CameraService:
 
     def close(self, camera: str | None = None) -> dict:
         """Release a camera (turn it off for this process). Flushes deferred
-        downloads first — that is CameraManager.disconnect's contract."""
+        downloads (and stops a running recording) first — that is
+        CameraManager.disconnect's contract."""
         try:
             uid = camera or self._hub.active_uid
+            manager = self._hub.manager_for(camera or None)
+            watermark = _event_watermark_fn(manager)
             self._hub.disconnect(camera or None)
         except CameraControlError as exc:
             return _fail(str(exc))
-        return _ok({"camera": uid, "connected": False})
+        out: dict = {"camera": uid, "connected": False}
+        # The shutdown flush can land files the caller never saw announced
+        # (deferred backlog, a stopped recording) — and the manager is out
+        # of the registry now, so get_events can no longer reach its log
+        # (adversarial P2 2026-07-21: files hit the disk, the agent could
+        # never learn the paths). Harvest them from the corpse log (events
+        # deliberately survive worker exit) into the close result.
+        flushed = [
+            e.get("path")
+            for e in reversed(manager.get_events(since_id=watermark))
+            if e.get("kind") == "photo" and e.get("path")
+        ]
+        if flushed:
+            out["flushed_paths"] = flushed
+            out["media"] = list(flushed)  # sight-lane field, same contract
+        return _ok(out)
 
     def close_all(self) -> dict:
         self._hub.disconnect_all()
@@ -582,7 +600,26 @@ class CameraService:
                     "The camera is recording video — stop_recording() before arming "
                     "auto-fire (its mode write would corrupt the running recording)."
                 )
+            if action == "video":
+                # Preflight movie availability (adversarial P2 2026-07-21):
+                # arming video auto-fire on a family that cannot record
+                # (webcam without the [clips] extra) used to SUCCEED and
+                # then fail on every detection — a night watch of errors.
+                capabilities = manager.status().get("capabilities") or {}
+                movie = capabilities.get("movie") or {}
+                if movie.get("available") is False:
+                    return _fail(
+                        "This camera cannot record video"
+                        + (f" — {movie.get('reason')}" if movie.get("reason") else "")
+                        + ". Use action='photo' or 'monitor', or install the missing extra."
+                    )
             try:
+                # Watermark BEFORE arming (adversarial P3 2026-07-21): a
+                # detection landing in the arm-to-watermark gap used to be
+                # below the cursor and silently missed; snapshotting first
+                # inverts the race to the harmless direction (the consumer
+                # may see one pre-arm event, never lose a post-arm one).
+                watermark = self._event_watermark(manager)
                 if action == "photo":
                     manager.set_capture_mode("single")
                 elif action == "video":
@@ -607,7 +644,7 @@ class CameraService:
             "detection_target": status.get("detection_target"),
             "detection_sensitivity": status.get("detection_sensitivity"),
             "capture_mode": status.get("capture_mode"),
-            "event_watermark": self._event_watermark(manager),
+            "event_watermark": watermark,
         }
         if note:
             out["note"] = note
@@ -622,13 +659,22 @@ class CameraService:
             status = manager.set_detection_mode("off")
         except CameraControlError as exc:
             return _fail(str(exc))
-        return _ok(
-            {
-                "camera": camera or self._hub.active_uid,
-                "detection_mode": status.get("detection_mode"),
-                "downloads_pending": status.get("downloads_pending"),
-            }
-        )
+        out = {
+            "camera": camera or self._hub.active_uid,
+            "detection_mode": status.get("detection_mode"),
+            "downloads_pending": status.get("downloads_pending"),
+        }
+        if status.get("movie_recording"):
+            # A video-action detection may have started a recording that
+            # SURVIVES disarm by design (adversarial P1 2026-07-21: the
+            # result said nothing, so agents closed the watch and stranded
+            # the recording). Name it and the escape hatch.
+            out["movie_recording"] = True
+            out["note"] = (
+                "A video recording started by detection is still running — "
+                "stop_recording() to end it and collect the movie file."
+            )
+        return _ok(out)
 
     def get_events(
         self,

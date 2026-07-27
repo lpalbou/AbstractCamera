@@ -207,16 +207,20 @@ class DownloadsMixin:
                 return 0.0
             return time.time() - self._pending_downloads[0][2]
 
-    def _drain_capture_events(self, camera, time_budget_s: float = 10.0) -> None:
+    def _drain_capture_events(self, camera, time_budget_s: float = 10.0,
+                              ignore_stop: bool = False) -> None:
         """Collect capture results without blocking the live view loop.
         `time_budget_s` bounds the WHOLE drain (checked between events) so a
         slow multi-file download cannot blow a sequence deadline. Downloads
-        are announced first (burst bookkeeping) then fetched inline."""
+        are announced first (burst bookkeeping) then fetched inline.
+        `ignore_stop` is for the worker's FINAL drain (stopping a recording
+        during shutdown — the stop flag is already set there, and returning
+        early would strand the just-stopped movie file unannounced)."""
         drain_deadline = time.time() + max(0.05, float(time_budget_s))
         while True:
             # Stop-flag check: disconnect()'s 10s join must not strand a
             # zombie worker mid-download loop (F8).
-            if self._stop_requested.is_set():
+            if not ignore_stop and self._stop_requested.is_set():
                 return
             if time.time() >= drain_deadline:
                 return  # deadline wins; remaining files drain next window
@@ -234,4 +238,5 @@ class DownloadsMixin:
         # the remaining budget.
         remaining = drain_deadline - time.time()
         if remaining > 0.05:
-            self._flush_pending_downloads(camera, time_budget_s=remaining)
+            self._flush_pending_downloads(camera, time_budget_s=remaining,
+                                          ignore_stop=ignore_stop)

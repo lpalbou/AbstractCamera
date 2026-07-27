@@ -32,11 +32,17 @@ paths on this storeless tool lane (the capability plugin overrides with
 `{"$artifact": id}` refs when an artifact store is present). The field is
 AUTHORED at the source, never sniffed from prose, and ABSENT when no
 local file landed (deferred, on-device, and undelivered results alike).
-Agent adapters fold it into the next model call so the agent SEES what
-it shot. Deliberately out of scope: get_events rows (a busy auto-fire
-page would fold N images against caps designed for single tool results)
-— detection captures enter the sight lane when the agent reads the
-event's path and looks at it explicitly.
+The ruled consumer contract is LIVE: abstractagent's ReAct adapter folds
+`media` into the next model call so the agent SEES what it shot (agent's
+media-ref fold, receipt c4133; LIVE-PROVEN by flow's adversary c4193 — a
+gateway-hosted flow captured a real JPEG through camera_capture_photo and
+the model described the actual room). Core's analyze_media stays the
+RE-LOOK path afterwards (bounded text, one attempt; it PIL-verifies the
+file decodes, so a stale ref refuses loudly instead of describing a
+placeholder — core c4269). Deliberately out of scope: get_events rows (a
+busy auto-fire page would fold N images against caps designed for single
+tool results) — detection captures enter the sight lane when the agent
+reads the event's path and looks at it explicitly.
 
 Classification (the facts this package owns about its OWN tools, in core's
 inventory vocabulary plus one domain tag, ruled per
@@ -52,7 +58,19 @@ decision:domain-tool-classification-tags):
   layers and privacy policies key on this fact — a capture tool
   auto-approved in an unattended loop records real people without consent.
   (Semantics passed spelling + this definition + the per-tool assignment,
-  commons c3176.)
+  commons c3176. Promoted UNCHANGED to the framework-shared fact vocabulary
+  by the tool-tiers item-D naming pass, 2026-07-22.)
+- standing_effect: true when the call ARMS AN ONGOING PROCESS that keeps
+  acting after the call returns — among camera's tools, only
+  camera_start_detection (auto-fire keeps shooting on detections with
+  nobody at the gate; one approval covers unbounded future shutters, the
+  exact unattended-loop event captures_environment names). Ruled spelling
+  from the tool-tiers item-D naming pass (semantics desk, core inventory
+  desk verified; camera adopted c4497 — camera's proposed `standing` lost
+  to core's `standing_effect`, one name per fact). Grant layers use it to
+  select revocation-on-tighten semantics (host revokes the armed process
+  via camera_stop_detection) instead of gate-on-next-call; the tier
+  presentation renders it as a mandatory modifier, never a numeric bump.
 """
 
 from __future__ import annotations
@@ -69,34 +87,46 @@ except ImportError as exc:  # pragma: no cover - exercised only without abstract
         'pip install "abstractcore"'
     ) from exc
 
-# The three fact keys every classification entry MUST declare. The approval
+# The fact keys every classification entry MUST declare. The approval
 # derivation fails CLOSED against this set (an entry missing a key — e.g. a
 # new tool whose author forgot `captures_environment` — must never slip into
 # the auto-approve bucket on the strength of the keys that happen to be
 # present; adversarial finding 2026-07-21). The exhaustiveness test pins it
 # too, but the fail-closed DEFAULT is enforced in the CODE, not by the test.
-_CLASSIFICATION_FACTS = ("mutating", "remote_write_capable", "captures_environment")
+# `standing_effect` joined with the tool-tiers item-D ruled vocabulary
+# (schema v3; camera adopted c4497) — the partition is UNCHANGED by its
+# arrival (the only standing tool already asked via captures_environment).
+_CLASSIFICATION_FACTS = (
+    "mutating",
+    "remote_write_capable",
+    "captures_environment",
+    "standing_effect",
+)
 
 # The facts approval/policy layers consume (see module docstring). This map
 # is exhaustive over CAMERA_TOOLS by construction and pinned by tests both
 # ways — classification is a deliberate decision at add AND remove time
 # (core's inventory rule, applied to this package's own tools).
 CAMERA_TOOL_CLASSIFICATION: Dict[str, Dict[str, bool]] = {
-    "camera_list_devices": {"mutating": False, "remote_write_capable": False, "captures_environment": False},
-    "camera_open": {"mutating": True, "remote_write_capable": True, "captures_environment": True},
-    "camera_close": {"mutating": True, "remote_write_capable": True, "captures_environment": False},
-    "camera_status": {"mutating": False, "remote_write_capable": False, "captures_environment": False},
+    "camera_list_devices": {"mutating": False, "remote_write_capable": False, "captures_environment": False, "standing_effect": False},
+    "camera_open": {"mutating": True, "remote_write_capable": True, "captures_environment": True, "standing_effect": False},
+    "camera_close": {"mutating": True, "remote_write_capable": True, "captures_environment": False, "standing_effect": False},
+    "camera_status": {"mutating": False, "remote_write_capable": False, "captures_environment": False, "standing_effect": False},
     # preview_photo: no shutter, no remote state change (frame pull is a
     # read) — but it RECORDS THE PHYSICAL SURROUNDINGS to a local file, so
     # captures_environment is unambiguously true (and mutating: it writes
     # the file). Same ask-by-default tier as the capture verbs.
-    "camera_preview_photo": {"mutating": True, "remote_write_capable": False, "captures_environment": True},
-    "camera_capture_photo": {"mutating": True, "remote_write_capable": True, "captures_environment": True},
-    "camera_capture_video": {"mutating": True, "remote_write_capable": True, "captures_environment": True},
-    "camera_stop_recording": {"mutating": True, "remote_write_capable": True, "captures_environment": False},
-    "camera_start_detection": {"mutating": True, "remote_write_capable": True, "captures_environment": True},
-    "camera_stop_detection": {"mutating": True, "remote_write_capable": True, "captures_environment": False},
-    "camera_get_events": {"mutating": False, "remote_write_capable": False, "captures_environment": False},
+    "camera_preview_photo": {"mutating": True, "remote_write_capable": False, "captures_environment": True, "standing_effect": False},
+    "camera_capture_photo": {"mutating": True, "remote_write_capable": True, "captures_environment": True, "standing_effect": False},
+    "camera_capture_video": {"mutating": True, "remote_write_capable": True, "captures_environment": True, "standing_effect": False},
+    "camera_stop_recording": {"mutating": True, "remote_write_capable": True, "captures_environment": False, "standing_effect": False},
+    # start_detection is camera's ONE standing authority: it arms auto-fire
+    # that keeps shooting after the call returns (grant layers: tightening
+    # below its tier means REVOKING via camera_stop_detection, adopted
+    # c4444 — no per-shot gate exists by construction).
+    "camera_start_detection": {"mutating": True, "remote_write_capable": True, "captures_environment": True, "standing_effect": True},
+    "camera_stop_detection": {"mutating": True, "remote_write_capable": True, "captures_environment": False, "standing_effect": False},
+    "camera_get_events": {"mutating": False, "remote_write_capable": False, "captures_environment": False, "standing_effect": False},
 }
 
 
@@ -304,7 +334,11 @@ def camera_start_detection(
         action: "photo" = auto-fire a still on each detection (cooldown
             applies); "video" = first detection starts recording, a later
             one stops it (camera_stop_recording ends it manually);
-            "monitor" = log detections only, never fire.
+            "monitor" = log detections without firing the shutter. NOTE:
+            motion/meteor detections ALSO save a short pre-event ring clip
+            to disk in every mode, monitor included — its path rides the
+            detection event ("monitor" still writes clip files, it only
+            skips captures).
         target: What to detect — "motion", "lightning", or "meteor".
         sensitivity: 0-100 (higher = more sensitive); omit to keep the
             current setting.
@@ -353,10 +387,12 @@ def camera_get_events(since_id: int = 0, camera: str = "", limit: int = 50) -> D
             with `since_id` = the returned `last_id` for the next page.
 
     Event kinds (the full wire set): "detection" (what was seen; `metrics`
-    carries bbox/centroid/speed measurements), "trigger" (a capture act was
-    issued), "photo" (file saved locally — `path`), "photo-pending" (shot
-    exists on the camera; downloads later or stays per save policy), "clip"
-    (pre-capture ring clip), "camera-event" (device status), "error".
+    carries bbox/centroid/speed measurements, and motion/meteor detections
+    carry `path` to their auto-saved ring clip — monitor mode included),
+    "trigger" (a capture act was issued), "photo" (file saved locally —
+    `path`), "photo-pending" (shot exists on the camera; downloads later or
+    stays per save policy), "clip" (pre-capture ring clip), "camera-event"
+    (device status), "error".
     Cursor rules: `session` names the id space — a NEW session value means
     the camera reconnected and ids restarted (reset your cursor to 0);
     `evicted: true` means the bounded log dropped events between your
@@ -426,9 +462,10 @@ def camera_tool_approval_defaults() -> Dict[str, List[str]]:
 
     DERIVED from CAMERA_TOOL_CLASSIFICATION, never hand-listed (a copy
     would rot when a tool or fact changes): a camera tool auto-approves
-    ONLY when all three declared facts are present AND every one is False —
+    ONLY when every declared fact key is present AND every one is False —
     it neither mutates local state, nor reaches remote devices, nor records
-    the physical surroundings. Everything else DEFAULTS to require-approval.
+    the physical surroundings, nor arms a standing process. Everything else
+    DEFAULTS to require-approval.
 
     These are DEFAULTS, not a floor (operator ruling 2026-07-21, commons
     c3938): "a user must be able to auto accept camera or ask the agent to
@@ -474,7 +511,7 @@ def camera_tool_approval_defaults() -> Dict[str, List[str]]:
     auto: List[str] = []
     require: List[str] = []
     for name, facts in CAMERA_TOOL_CLASSIFICATION.items():
-        # Fail closed: only an entry that declares EXACTLY the three facts
+        # Fail closed: only an entry that declares EXACTLY the fact set
         # and sets every one False may auto-approve. Missing/extra keys or
         # any True fact => approval side.
         if set(facts.keys()) == facts_keys and not any(facts.values()):

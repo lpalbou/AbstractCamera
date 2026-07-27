@@ -128,6 +128,59 @@ class DiscoveryAndLifecycle(ServiceHarness):
         self.assertEqual(sorted(status["cameras"]), [uid],
                          "the corpse must be reaped, not accumulate")
 
+    def test_disconnect_stops_a_running_recording(self):
+        """Adversarial P1 (2026-07-21, watch-flow pass): NO lifecycle path
+        stopped a running movie — close/close_all/atexit left PTP bodies
+        recording until the card filled and silently lost webcam MP4s. The
+        worker's shutdown must toggle the recording OFF (so the movie file
+        announces) before the final flush."""
+        fake_gp.configure(movie_toggle_fails=False, movie_prohibit_text="")
+        opened = self.service.open()
+        self.assertTrue(opened["success"])
+        uid = opened["camera"]
+        manager = self.service.hub.manager_for(uid)
+
+        manager.set_capture_mode("video")
+        manager.request_trigger()
+        deadline = time.time() + 10.0
+        while time.time() < deadline and not manager.status()["movie_recording"]:
+            time.sleep(0.05)
+        self.assertTrue(manager.status()["movie_recording"], "recording must be running")
+
+        closed = self.service.close(uid)
+        self.assertTrue(closed["success"], closed)
+        self.assertFalse(manager.status()["movie_recording"],
+                         "disconnect must stop the recording, never strand it")
+        # The stop act is on the record (corpse log survives; the stop
+        # toggle logs a trigger event with the disconnect reason).
+        kinds = [(e["kind"], e["reason"]) for e in manager.get_events(since_id=0)]
+        self.assertIn(("trigger", "disconnect"), kinds,
+                      f"the shutdown stop toggle must be logged: {kinds}")
+
+    def test_stop_detection_names_a_surviving_recording(self):
+        """Adversarial P1 second half: disarming a video-action watch while
+        its recording runs must SAY so (agents used to close blind)."""
+        fake_gp.configure(movie_toggle_fails=False, movie_prohibit_text="")
+        opened = self.service.open()
+        self.assertTrue(opened["success"])
+        uid = opened["camera"]
+        manager = self.service.hub.manager_for(uid)
+        armed = self.service.start_detection(uid, action="video", target="motion")
+        self.assertTrue(armed["success"], armed)
+        # Simulate a detection-started recording.
+        manager.request_trigger()
+        deadline = time.time() + 10.0
+        while time.time() < deadline and not manager.status()["movie_recording"]:
+            time.sleep(0.05)
+
+        stopped = self.service.stop_detection(uid)
+        self.assertTrue(stopped["success"], stopped)
+        self.assertTrue(stopped.get("movie_recording"),
+                        "a surviving recording must be named in the result")
+        self.assertIn("stop_recording", stopped.get("note", ""))
+        ended = self.service.stop_recording(uid)
+        self.assertTrue(ended["success"], ended)
+
     def test_shared_service_registers_exit_release(self):
         """P1 regression (adversarial 2026-07-21): get_shared_service() had
         no atexit hook (the legacy get_default_manager() does), so a routine

@@ -577,13 +577,65 @@ def register(registry: Any) -> None:
             install_hint=_INSTALL_HINT,
             config_hint=_CONFIG_HINT,
         )
-        return
-    registry.register_backend(
-        capability="camera",
-        backend_id=BACKEND_ID,
-        factory=_factory,
-        priority=0,
-        description=description,
-        install_hint=_INSTALL_HINT,
-        config_hint=_CONFIG_HINT,
-    )
+    else:
+        registry.register_backend(
+            capability="camera",
+            backend_id=BACKEND_ID,
+            factory=_factory,
+            priority=0,
+            description=description,
+            install_hint=_INSTALL_HINT,
+            config_hint=_CONFIG_HINT,
+        )
+
+    # Contribute the camera TOOLS + their approval classification THROUGH
+    # core (laurent dm#16/#18: the ONLY package that imports abstractcamera
+    # is abstractcore; runtime/gateway must reach camera tools THROUGH core,
+    # never by importing this package). Core surfaces them via
+    # register_capability_tools + capability_tools(name) (commons c4219);
+    # duck-typed so an older core without the surface simply skips this and
+    # the tools stay reachable by explicit import as before. The tool
+    # DEFINITIONS carry the callable (`.function`) so a host executes them
+    # without importing camera; camera-owned classification rides in a
+    # PARALLEL policy contribution when core exposes that half (runtime's
+    # ask-by-default fold needs it, c4212) — import-light either way (these
+    # accessors pull abstractcore, never the OpenCV stack).
+    contribute_tools = getattr(registry, "register_capability_tools", None)
+    if callable(contribute_tools):
+        try:
+            from abstractcamera.integrations.abstractcore_tools import (
+                CAMERA_TOOL_CLASSIFICATION,
+                camera_tool_approval_defaults,
+                camera_tool_definitions,
+            )
+
+            contribute_tools("camera", camera_tool_definitions())
+            # Approval classification, when core exposes the policy surface
+            # (the half runtime's fold consumes so its camera import dies).
+            contribute_policy = getattr(registry, "register_capability_tool_policy", None)
+            if callable(contribute_policy):
+                contribute_policy("camera", camera_tool_approval_defaults())
+            # Risk FACTS (tool-tiers build, schema v3): plugins declare
+            # facts, core validates spellings at the desk and derives the
+            # tier through the one versioned mapping — camera never stores
+            # a derived integer (converged rule). Duck-typed: older cores
+            # without the facts surface skip this; the classification dict
+            # IS the declaration (all four ruled facts per tool).
+            contribute_facts = getattr(registry, "register_capability_tool_facts", None)
+            if callable(contribute_facts):
+                contribute_facts("camera", CAMERA_TOOL_CLASSIFICATION)
+        except Exception as exc:
+            # Tool contribution is best-effort surfacing: a failure here
+            # must never break capability registration (the camera backend
+            # is already registered above). The explicit-import tool path
+            # remains available as the fallback. But NEVER silently
+            # (adversary P2-2: a swallowed failure left tools absent with
+            # zero record anywhere core-side — consumers saw a phantom
+            # present-but-broken with nothing to diagnose from).
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "#FALLBACK camera capability registered but its tool/policy "
+                "contribution through core failed; camera tools will not be "
+                "served by capability_tools('camera'): %s", exc,
+            )

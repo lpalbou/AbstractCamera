@@ -92,6 +92,15 @@ class WebcamAdapter(CameraAdapter):
             "movie": {
                 "can_preflight": True,
                 "can_confirm": True,
+                # Affirmative availability: the ONE family that can truly
+                # preflight recording (PyAV present?). Consumers refuse
+                # video auto-fire on `available: False` BEFORE arming
+                # (adversarial P2 2026-07-21: arming succeeded, then every
+                # detection failed its toggle all night).
+                "available": self._movie_available(),
+                "reason": (None if self._movie_available()
+                           else "movie recording needs the [clips] extra "
+                                "(pip install \"abstractcamera[clips]\")"),
                 "note": ("recorded on this computer as MP4 — start/stop are fully "
                          "confirmable" if self._movie_available()
                          else "movie recording needs the [clips] extra "

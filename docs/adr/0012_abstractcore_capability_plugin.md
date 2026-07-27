@@ -187,3 +187,36 @@ RETURN VALUE stays the documented exception to the JSON-safe-dict rule
 (vision-plugin convention; an artifact ref when a store is passed); the
 hub's process-shared capture-root semantics (LAST configurer wins for new
 connections) stay and are documented in the config_hint.
+
+## Operator ruling folded (dm#16-20, 2026-07-22): tools flow THROUGH core
+
+Laurent, verbatim: "THE ONLY PACKAGE THAT CAN AND SHOULD IMPORT ABSTRACT
+CAMERA IS ABSTRACT CORE. IN NO CIRCUMSTANCES OTHER PACKAGES SHOULD IMPORT
+ABSTRACTCAMERA : THEY ALL GO THROUGH THE INTERFACES OF ABSTRACT CORE."
+AbstractRuntime's default toolset had imported
+`abstractcamera.integrations.abstractcore_tools` directly — a layering
+violation. The fix, one lane, three parts:
+
+- **Camera (this plugin)**: `register()` contributes the tool set via
+  core's `register_capability_tools("camera", camera_tool_definitions())`
+  and the approval partition via
+  `register_capability_tool_policy("camera", camera_tool_approval_defaults())`.
+  Duck-typed: an older core without the surface still gets the backend;
+  contribution failure never breaks capability registration.
+- **Core**: stores + serves both through
+  `abstractcore.capabilities.capability_tools("camera")` /
+  `capability_tool_policy("camera")` (module-level accessors over a shared
+  registry; the read side ensure-loads entry-point plugins so a fresh
+  registry cannot silently answer empty for an installed plugin).
+- **Runtime**: consumes ONLY core's surface — toolset composition uses the
+  served ToolDefinitions' `.function` callables; the `ToolApprovalPolicy`
+  fold reads the served partition, fail-closed to empty sets on absence.
+  Zero abstractcamera import statements in runtime src/, pinned by a
+  grep-grade test.
+
+This refines (does not reverse) the c3168 explicit-tools ruling: there is
+still NO tool entry-point auto-registration — the plugin contributes tools
+to core's REGISTRY (storage + serving), and hosts still consciously compose
+which tools they register. Explicit direct import of
+`integrations.abstractcore_tools` remains the supported path for hosts at
+or below core; nothing above core may use it.

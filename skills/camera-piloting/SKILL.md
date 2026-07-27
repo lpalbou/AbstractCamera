@@ -45,7 +45,10 @@ device uid…" — re-read the `camera_open` result, don't re-list.
 ## Detection (watch for motion/lightning/meteors)
 
 1. `camera_start_detection(target="motion", action="photo")` — action
-   `monitor` only logs; `photo`/`video` auto-fire on hits. Note the
+   `monitor` logs without firing the shutter; `photo`/`video` auto-fire
+   on hits. Note: motion/meteor detections also SAVE a short pre-event
+   ring clip to disk in every mode, monitor included (the clip path rides
+   the detection event) — monitor skips captures, not recording. Note the
    returned `event_watermark`.
 2. Poll `camera_get_events(since_id=<cursor>)`; the returned `last_id` is
    the next cursor. Detection events carry `metrics` (bbox/centroid/speed)
@@ -59,10 +62,11 @@ device uid…" — re-read the `camera_open` result, don't re-list.
 
 ## Event kinds (the full set)
 
-`detection` (seen; metrics), `trigger` (capture act issued), `photo`
-(file saved locally; `path`), `photo-pending` (on the camera; downloads
-later or stays per save policy), `clip` (pre-capture ring clip),
-`camera-event` (device status), `error`.
+`detection` (seen; `metrics`, and motion/meteor hits carry `path` to
+their auto-saved ring clip — monitor mode included), `trigger` (capture
+act issued), `photo` (file saved locally; `path`), `photo-pending` (on
+the camera; downloads later or stays per save policy), `clip`
+(pre-capture ring clip), `camera-event` (device status), `error`.
 
 ## Cleanup honesty
 
@@ -71,11 +75,22 @@ running, disarm/stop FIRST (`camera_stop_detection`,
 `camera_stop_recording`), then `camera_close`. A recording left running
 fills the card; a claimed device wedges other hosts.
 
-## Standing sentinel (no polling)
+## Wake a workflow on motion (event API, no polling loop)
 
-For "wake me when something moves" tasks, the operator can run
-`abstractcamera watch --gateway URL --mailbox camera` — a separate process
-that owns the camera, arms detection, and forwards events as durable
-gateway events. A workflow then parks on a `wait_event` for the mailbox
-instead of burning turns polling. Don't hold a camera open in a loop just
-to poll events.
+Detection runs on the camera's own worker thread; every hit lands in the
+event log (`camera_get_events`, oldest-first, cursored). You do NOT poll it
+from an LLM loop — a producer AT A FRAMEWORK ENTRY watches the events and
+emits a durable wake, and a workflow parks until then. abstractcamera is a
+dependency of abstractcore and ships no gateway-facing daemon; the wake
+producer is a gateway-hosted run or a flow that consumes this event API.
+
+If you ARE authoring that producer/consumer flow: the wake event is a
+GLOBAL-scope event named after the mailbox, which the gateway keys as
+`evt:global:global:<mailbox>` (e.g. `evt:global:global:camera`). A
+`wait_event` node passes its `event_key` VERBATIM as the wait key, so it
+must be the FULL `evt:global:global:camera` string — parking on the bare
+`camera` never wakes (durable envelopes pile up in the run's inbox while it
+sleeps). The clean alternative: an `on_event` node with scope Global and
+name `camera` builds the key for you. The producer half must be a
+code/tool long-poll (no LLM call per check), never an Agent node polling
+in a loop — that would burn tokens idling.

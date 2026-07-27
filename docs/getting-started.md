@@ -204,10 +204,18 @@ event polling with an explicit cursor contract (`session` epoch +
 `CAMERA_TOOL_CLASSIFICATION` declares which tools capture the physical
 environment — approval layers gate those by default (user-overridable).
 
-To wake a parked workflow on movement instead of polling, run the
-sentinel: `abstractcamera watch --gateway http://127.0.0.1:8080
---mailbox camera --detect motion` — detection/capture events arrive as
-durable gateway events for any run declaring the mailbox.
+To wake a parked workflow on movement instead of polling, detection runs
+in-process and its events are readable through the capability's event API
+(`camera_get_events` / `detection_events` / `/v1/camera/events`). The wake
+PRODUCER belongs at a framework entry — a gateway-hosted durable run, or a
+flow, that holds a camera open through the capability, watches the event
+log, and emits a durable wake via the gateway's OWN `emit_event`; a flow
+`wait_event`/`on_event` node then resumes. abstractcamera ships no
+gateway-facing daemon (it is a dependency of abstractcore). If you author
+that flow: the wake event is GLOBAL-scope named after the mailbox, keyed
+`evt:global:global:<mailbox>` — a `wait_event` node takes that FULL string
+as `event_key` (the bare name never wakes), or an `on_event` node with
+Global scope + name `camera` builds the key for you.
 
 ## Camera-less development
 

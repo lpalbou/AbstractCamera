@@ -59,9 +59,11 @@ per-device capture folders under `~/Pictures/<device>/`.
   ride one sync engine that owns all safety rules; PTP-card stores
   (Sony/Nikon) are the named next adapters.
 - A CLI for manual checks: `abstractcamera list` / `abstractcamera preview`
-  / `abstractcamera download`, and a standing sentinel: `abstractcamera
-  watch` forwards detection/capture events as durable AbstractGateway
-  events so parked workflows wake on movement instead of polling.
+  / `abstractcamera download` (self-contained local operations). Detection
+  runs in-process and its events are readable through the capability's
+  event API (`camera_get_events` / `/v1/camera/events`); waking a durable
+  workflow on motion is a consumer built at a framework entry (gateway
+  run / flow), not a camera-shipped daemon.
 - **AbstractCore integration (ADR 0012)**: installing abstractcamera beside
   [AbstractCore](https://github.com/lpalbou/abstractcore) auto-registers the
   `camera` capability (entry point `abstractcore.capabilities_plugins`) —

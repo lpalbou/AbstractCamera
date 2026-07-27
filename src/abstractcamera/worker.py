@@ -376,6 +376,20 @@ class WorkerLoopMixin:
                 if elapsed < 0.004:
                     time.sleep(0.004 - elapsed)
         finally:
+            # A RUNNING RECORDING is stopped before the session closes
+            # (adversarial P1 2026-07-21: no lifecycle path stopped a movie —
+            # close/close_all/atexit left PTP bodies recording until the card
+            # filled, and the webcam encoder finished into a temp dir with no
+            # event, silently losing the MP4). Stop first so the movie file
+            # ANNOUNCES; the drain + flush below then land it locally. This
+            # is what makes get_shared_service()'s atexit claim true.
+            try:
+                if self._movie_recording:
+                    self._toggle_movie_recording(camera, reason="disconnect")
+                    self._drain_capture_events(camera, time_budget_s=4.0,
+                                               ignore_stop=True)
+            except Exception:
+                pass
             # Deferred files are downloaded before the session closes: files
             # remain on the card either way, but the user expects everything
             # they shot to land on this computer when they disconnect.
