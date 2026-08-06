@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.2.0] - 2026-08-06
+
 - **`standing_effect` fact declared (tool-tiers item-D ruled vocabulary,
   2026-07-23).** `CAMERA_TOOL_CLASSIFICATION` grows the fourth ruled fact:
   true ONLY for `camera_start_detection` — camera's one STANDING authority

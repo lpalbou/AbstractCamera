@@ -9,11 +9,11 @@ AbstractCamera is part of the **AbstractFramework** ecosystem:
 
 ## Ground rules
 
-- Keep the public API stable (`VisionManager` in [`src/abstractcamera/vision_manager.py`](src/abstractcamera/vision_manager.py)).
-- Prefer additive changes (new fields, new models, new backends) over breaking changes.
-- Don’t commit model weights, large binaries, or cache artifacts.
-- Make docs and examples match the code (the repo is intended to be “readme-first”).
-- Keep imports lazy for heavy stacks (see [`src/abstractcamera/backends/__init__.py`](src/abstractcamera/backends/__init__.py)).
+- Keep the public API stable (`CameraManager`, `CameraHub`, and the session protocol in [`src/abstractcamera/camera_manager.py`](src/abstractcamera/camera_manager.py) and [`src/abstractcamera/wire.py`](src/abstractcamera/wire.py)).
+- Prefer additive changes (new fields, new family adapters, new tools) over breaking changes.
+- Do not commit model weights, large binaries, or cache artifacts.
+- Make docs and examples match the code (the repo is intended to be readme-first).
+- Keep `import abstractcamera` light — the camera stack (OpenCV/numpy) loads on first attribute use, never at package import (see [`src/abstractcamera/__init__.py`](src/abstractcamera/__init__.py)).
 
 ## Development setup
 
@@ -30,13 +30,15 @@ Optional (if you work on AbstractCore integration locally):
 python -m pip install abstractcore
 ```
 
-The `abstractcamera[abstractcore]` extra is only a compatibility marker. AbstractCore is intentionally supplied by the host application, not installed by AbstractCamera.
+AbstractCore is intentionally supplied by the host application. The capability plugin registers through the `abstractcore.capabilities_plugins` entry point when both packages are installed.
 
 ## Run tests
 
 ```bash
-python -m unittest discover -s tests -p "test_*.py" -q
+python -m pytest tests/ -q
 ```
+
+Camera-less CI uses the built-in simulator (`ABSTRACTCAMERA_FAKE=1` is set in CI). Hardware validation scripts live under `scripts/` and are run manually against real bodies.
 
 ## Common contribution types
 
@@ -50,58 +52,48 @@ Core entrypoints:
 - [`docs/faq.md`](docs/faq.md)
 - [`docs/adr/README.md`](docs/adr/README.md)
 
+After doc changes, regenerate the AI-readable bundle:
+
+```bash
+python scripts/generate_llms_full.py
+```
+
 Doc hygiene checklist:
-- Commands are copy/pastable.
+- Commands are copy-pastable.
 - Links resolve (relative links are preferred).
-- Claims about support status match the current code (see [`docs/reference/backends.md`](docs/reference/backends.md)).
-- Major claims are anchored in evidence (link to the relevant `src/` implementation).
-- Prefer diagrams in Mermaid when they improve clarity ([`docs/architecture.md`](docs/architecture.md) is the canonical place).
+- Support claims match the current code and ADRs.
+- Prefer Mermaid diagrams when they improve clarity ([`docs/architecture.md`](docs/architecture.md) is the canonical place).
 
-### 2) Add or update models in the capability registry
+### 2) Add or extend a camera family
 
-Source of truth:
-- `src/abstractcamera/assets/vision_model_capabilities.json`
-
-Validator + loader:
-- `src/abstractcamera/model_capabilities.py`
+Family adapters live in [`src/abstractcamera/adapters/`](src/abstractcamera/adapters/). Transport sessions and drivers live in [`src/abstractcamera/drivers/`](src/abstractcamera/drivers/).
 
 Checklist:
-- Add/update the model entry in the JSON.
-- Keep the model family platform-neutral; add engine-specific artifacts as download variants rather
-  than as host-specific duplicate models.
-- Prefer official upstream repos. Use community repos only when they provide the best runtime-native
-  artifact for a target engine and label them clearly.
-- Do not treat adapters or component artifacts as standalone curated models unless the runtime path
-  is first-class.
-- Keep the change aligned with
-  [ADR 0005](docs/adr/0005_curated_capability_registry_and_download_catalog.md),
-  [ADR 0006](docs/adr/0006_operator_control_configuration_precedence_and_explicit_network_use.md),
-  and [docs/reference/capabilities-registry.md](docs/reference/capabilities-registry.md).
-- Run the unit tests (they validate schema + coverage).
-- Sanity check CLI output:
-  - `abstractcamera show-model <model_id>`
+- Implement the session protocol ([`src/abstractcamera/wire.py`](src/abstractcamera/wire.py), [`src/abstractcamera/session.py`](src/abstractcamera/session.py)).
+- Add a family adapter with honest capability descriptors (ADR 0004).
+- Extend `tests/test_session_protocol.py` and add family-specific tests.
+- Document the family in [`docs/api.md`](docs/api.md) and add an ADR when the design choice is load-bearing.
+- Validate against real hardware before claiming support (ADR 0007).
 
-### 3) Add a new backend
+### 3) Extend AbstractCore integration
 
-Backend interface:
-- `src/abstractcamera/backends/base_backend.py`
-
-Where backends live:
-- `src/abstractcamera/backends/`
+Integration surfaces:
+- [`src/abstractcamera/service.py`](src/abstractcamera/service.py) — synchronous operation layer
+- [`src/abstractcamera/integrations/abstractcore_plugin.py`](src/abstractcamera/integrations/abstractcore_plugin.py) — capability plugin
+- [`src/abstractcamera/integrations/abstractcore_tools.py`](src/abstractcamera/integrations/abstractcore_tools.py) — explicit AI tool set
 
 Checklist:
-- Implement the `VisionBackend` methods (raise `CapabilityNotSupportedError` for unsupported tasks).
-- Keep imports lazy (avoid importing Torch/Diffusers at module import time unless unavoidable).
-- Add/extend tests under `tests/`.
-- Document the backend in `docs/reference/backends.md` and, if user-facing, add a short section in `docs/getting-started.md`.
+- Delegate through `CameraService`; do not duplicate capture/wait logic in the plugin or tools.
+- Update `CAMERA_TOOL_CLASSIFICATION` when adding tools.
+- Add tests under `tests/test_abstractcore_plugin.py` and `tests/test_abstractcore_tools.py`.
 
 ## Submitting a change
 
 Please include:
-- A short explanation of the change and why it’s needed.
-- Test results (`python -m unittest ...`).
-- Any doc updates required to keep the repository truthful.
+- A short explanation of the change and why it is needed.
+- Test results (`python -m pytest tests/ -q`).
+- Doc updates and `llms-full.txt` regeneration when public behavior or setup changes.
 
 ## Questions / discussions
 
-If you’re unsure about scope or design, open an issue with a minimal proposal and a concrete example (inputs/outputs).
+If you are unsure about scope or design, open an issue with a minimal proposal and a concrete example (inputs/outputs).

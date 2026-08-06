@@ -5,14 +5,28 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "abstractcamera"
 dynamic = ["version"]
-description = "Camera control abstractions (tethered PTP bodies, built-in webcams, simulators) for the Abstract ecosystem"
+description = "Camera control abstractions (tethered PTP bodies, built-in webcams, DWARF telescopes, simulators) for the Abstract ecosystem"
+keywords = [
+  "camera",
+  "photography",
+  "gphoto2",
+  "webcam",
+  "ptp",
+  "tethering",
+  "abstractcore",
+  "abstractframework",
+  "ai-tools",
+  "telescope",
+  "astrophotography",
+  "computer-vision",
+]
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "Laurent-Philippe Albou", email = "contact@abstractcore.ai"}]
 requires-python = ">=3.10"
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Operating System :: MacOS",
   "Operating System :: POSIX :: Linux",

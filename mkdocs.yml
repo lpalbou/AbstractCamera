@@ -1,0 +1,47 @@
+site_name: AbstractCamera
+site_description: Multi-camera control for Python — tethered PTP bodies, webcams, DWARF telescopes, and AbstractCore AI tool integration.
+site_url: https://www.lpalbou.info/AbstractCamera/
+repo_url: https://github.com/lpalbou/AbstractCamera
+repo_name: lpalbou/AbstractCamera
+
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+plugins:
+  - search
+
+validation:
+  nav:
+    omitted_files: ignore
+  links:
+    not_found: ignore
+    unrecognized_links: ignore
+
+nav:
+  - Overview: README.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - API: api.md
+  - Support:
+      - FAQ: faq.md
+      - Troubleshooting: troubleshooting.md
+  - Project:
+      - Backlog: backlog/README.md
+      - ADRs: adr/README.md
+      - Contributing: ../CONTRIBUTING.md
+      - Changelog: ../CHANGELOG.md
