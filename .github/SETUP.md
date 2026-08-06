@@ -2,14 +2,21 @@
 
 ## PyPI Trusted Publishing
 
-Configure a PyPI trusted publisher for this repository:
+Configure a PyPI trusted publisher for this repository (project must exist on PyPI first):
 
+- **PyPI project**: `abstractcamera`
 - **Owner**: `lpalbou`
 - **Repository**: `AbstractCamera`
 - **Workflow name**: `Release`
 - **Environment name**: `pypi`
 
+The workflow uses OIDC (`pypa/gh-action-pypi-publish`). A failed publish with
+`invalid-publisher` means this publisher record is missing or the environment
+name does not match exactly.
+
 Then add a GitHub environment named `pypi` in this repository's settings. The release workflow publishes through OIDC (`pypa/gh-action-pypi-publish`).
+
+GitHub Release artifacts and GitHub Pages docs deploy even when PyPI publish is still pending setup.
 
 ## GitHub Pages
 

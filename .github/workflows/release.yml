@@ -181,7 +181,7 @@ jobs:
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build, ensure-tag, publish-pypi]
+    needs: [build, ensure-tag]
     permissions:
       contents: write
     steps:
@@ -204,7 +204,7 @@ jobs:
   deploy-docs:
     name: Deploy docs to GitHub Pages
     runs-on: ubuntu-latest
-    needs: [build, github-release]
+    needs: [build, ensure-tag, github-release]
     permissions:
       contents: write
     steps:

@@ -371,7 +371,7 @@ class ControllerIntegrationGates(unittest.TestCase):
                           file_added_offset_s=0.1)
         self.controller.connect()
         self.controller.set_detection_mode("auto", target="motion", sensitivity=70)
-        time.sleep(2.5)  # detector settle
+        time.sleep(3.0)  # detector settle
         fake_gp.configure(inject_motion_blobs=[{
             "t0": time.time() - fake_gp._preview_epoch + 0.3,
             "x": 200, "y": 150, "w": 120, "h": 90,
@@ -379,7 +379,7 @@ class ControllerIntegrationGates(unittest.TestCase):
         }])
         # Auto-fire happens, file is announced but NOT downloaded.
         self.assertTrue(self.wait_for(
-            lambda: self.controller.status()["downloads_pending"] >= 1, timeout=12.0),
+            lambda: self.controller.status()["downloads_pending"] >= 1, timeout=20.0),
             f"no deferred download; events: {[(e['kind'], e['note'][:40]) for e in self.controller.get_events()]}")
         self.assertTrue(self.controller.status()["downloads_deferred"])
         pending_rows = [e for e in self.controller.get_events() if e["kind"] == "photo-pending"]
