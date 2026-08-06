@@ -1,0 +1,1191 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multi-camera control for Python — tethered PTP bodies, webcams, DWARF telescopes, and AbstractCore AI tool integration.">
+      
+      
+      
+        <link rel="canonical" href="https://www.lpalbou.info/AbstractCamera/api/">
+      
+      
+        <link rel="prev" href="../architecture/">
+      
+      
+        <link rel="next" href="../faq/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>API - AbstractCamera</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AbstractCamera" class="md-header__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AbstractCamera
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AbstractCamera" class="md-nav__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AbstractCamera
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#abstractcore-integration-adr-0012" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AbstractCore integration (ADR 0012)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#module-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-media-downloads-abstractcamera-download-adr-0011" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device media downloads (abstractcamera download, ADR 0011)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#camerahub-multi-camera-hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CameraHub (multi-camera hosts)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cameramanager-all-methods-thread-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CameraManager (all methods thread-safe)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-capabilities-descriptor-statuscapabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The capabilities descriptor (status()["capabilities"])
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending-a-new-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending: a new family
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backlog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#abstractcore-integration-adr-0012" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AbstractCore integration (ADR 0012)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#module-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Module surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-media-downloads-abstractcamera-download-adr-0011" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device media downloads (abstractcamera download, ADR 0011)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#camerahub-multi-camera-hosts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CameraHub (multi-camera hosts)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cameramanager-all-methods-thread-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CameraManager (all methods thread-safe)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-capabilities-descriptor-statuscapabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The capabilities descriptor (status()["capabilities"])
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending-a-new-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending: a new family
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
+<h2 id="abstractcore-integration-adr-0012">AbstractCore integration (ADR 0012)<a class="headerlink" href="#abstractcore-integration-adr-0012" title="Permanent link">&para;</a></h2>
+<p>Installing abstractcamera beside abstractcore registers the <code>camera</code>
+capability automatically (entry point group
+<code>abstractcore.capabilities_plugins</code>, backend id <code>abstractcamera:hub</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>abstractcamera.service.CameraService</code></td>
+<td>Synchronous dict-in/dict-out ops over a <code>CameraHub</code>: <code>list_cameras/open/close/close_all/status/preview_frame/preview_photo/capture_photo/capture_video/stop_recording/start_detection/stop_detection/get_events</code>. Every result carries <code>success</code>; failures carry actionable <code>error</code> text and NEVER raise on bad input. Capture waits watch the event log from a pre-trigger watermark with bounded timeouts (<code>timed_out: true</code> sentinel) and skip stale-stamped backlog files (<code>trigger_id</code> correlation); everything that writes capture mode or triggers holds a per-camera capture lock (concurrent captures refuse honestly; <code>stop_recording</code> is the escape hatch for recordings started by detection auto-fire). Under armed auto-fire, <code>capture_photo</code> returns an honest DEFERRED success (downloads land at disarm). <code>open()</code> is idempotent AND serialized (concurrent opens join the in-flight claim instead of double-claiming the device); re-opens after an unplug reap the dead session and reuse its uid. <code>preview_photo</code> saves the current live-view frame (no shutter). <code>get_events</code> responses carry the wire contract: <code>session</code> (id-space epoch; new value = reconnect, reset cursors), <code>evicted</code>/<code>first_retained_id</code> (bounded-log gap signal), per-event <code>trigger_id</code> + detection <code>metrics</code>. <code>get_shared_service()</code> is the process-wide instance both integration surfaces use; it honors <code>ABSTRACTCAMERA_CAPTURE_ROOT</code> and registers an atexit that releases cameras (flushing downloads) on clean process exit.</td>
+</tr>
+<tr>
+<td><code>integrations.abstractcore_plugin</code></td>
+<td>The capability plugin (<code>register(registry)</code>); import-light — the camera stack (OpenCV) loads on first USE, never at plugin/registry load. Capability methods raise <code>CameraControlError</code> on failure (core convention) and return JSON-safe dicts (core ruling c3168). <code>capture_photo</code>/<code>capture_video</code>/<code>stop_recording</code> return paths by default, add base64 content (<code>data_b64</code>, capped 64MB — use the artifact store beyond) with <code>include_bytes=True</code>, and store <code>{"$artifact": ...}</code> refs when <code>artifact_store=</code> is provided; <code>preview_frame</code> returns JPEG bytes as the return value (the one documented exception to the dict rule) or an artifact ref. Catalog routes: <code>available_providers()</code> (full transport records, derived from live driver resolution), <code>list_models()</code> (devices), <code>list_operations()</code>. <code>register()</code> ALSO contributes the tool set + its approval partition through core (operator layering ruling dm#16-20: ONLY abstractcore imports abstractcamera — runtime/gateway consume camera tools through <code>abstractcore.capabilities.capability_tools("camera")</code> / <code>capability_tool_policy("camera")</code>, never by importing this package; duck-typed, so older cores without the surface still get the backend). Note: the camera hub is process-shared — the LAST configured <code>camera_capture_root</code> wins for newly opened cameras across every consumer in the process.</td>
+</tr>
+<tr>
+<td><code>integrations.abstractcore_tools</code></td>
+<td>Eleven explicit <code>camera_*</code> tools for LLM tool calling: <code>camera_list_devices</code>, <code>camera_open</code>, <code>camera_close</code>, <code>camera_status</code>, <code>camera_preview_photo</code> (look without shooting — live-view frame, no shutter), <code>camera_capture_photo</code>, <code>camera_capture_video</code>, <code>camera_stop_recording</code>, <code>camera_start_detection</code>, <code>camera_stop_detection</code>, <code>camera_get_events</code>. Sight lane (operator-ruled): results that land a local file carry handler-authored <code>media</code> (bare paths here; <code>{"$artifact": id}</code> refs on the capability lane with a store) — absent when no file landed; the consumer contract is LIVE end to end: abstractagent's adapter folds <code>media</code> into the next model call (live-proven — a flow-authored agent captured a real JPEG and the model described the actual room; core's <code>analyze_media</code> is the re-look path afterwards). Accessors: <code>camera_tools()</code> (callables for <code>generate(tools=...)</code>), <code>camera_tool_definitions()</code> (ToolDefinitions), <code>camera_tool_specs()</code> (flat dicts). <code>CAMERA_TOOL_CLASSIFICATION</code> declares <code>mutating</code>/<code>remote_write_capable</code>/<code>captures_environment</code> per tool, exhaustively. <code>camera_tool_approval_defaults()</code> derives host approval defaults from the classification (auto-approve only when every fact is false — today <code>camera_list_devices</code>/<code>camera_status</code>/<code>camera_get_events</code>; every <code>captures_environment</code> tool defaults to require-approval, user-overridable through host policy per the operator ruling — a default, not a floor): the consumption surface for AbstractRuntime's <code>ToolApprovalPolicy</code> (backlog 0012).</td>
+</tr>
+<tr>
+<td>Detection → event API (wake-on-motion)</td>
+<td>Detection runs in-process (the <code>CameraManager</code> worker thread); results land in the cursor-contracted event log readable via <code>camera_get_events</code> (tool), <code>detection_events</code> (capability op), and <code>/v1/camera/events</code> (server). To WAKE a durable run on motion, a consumer AT A FRAMEWORK ENTRY (a gateway-hosted run or a flow that holds a camera open through the capability) watches that log and emits the wake event via the gateway's OWN <code>emit_event</code>; a flow <code>wait_event</code>/<code>on_event</code> node then resumes. abstractcamera provides the capability + the event API and holds ZERO gateway-API knowledge — the <code>abstractcamera watch</code> daemon was removed (ADR 0013 § Amendment, operator ruling dm#14: a dependency of abstractcore must never reach up to the gateway).</td>
+</tr>
+</tbody>
+</table>
+<p>Detection actions: <code>action="photo"</code> auto-fires a still per detection
+(cooldown-gated); <code>action="video"</code> starts recording on the first detection
+and stops it on a later one; <code>action="monitor"</code> only logs. Targets:
+<code>motion</code>, <code>lightning</code>, <code>meteor</code>. <code>camera_get_events(since_id=...)</code> is the
+polling surface (<code>event_watermark</code> from <code>camera_start_detection</code> is the
+starting cursor).</p>
+<h2 id="module-surface">Module surface<a class="headerlink" href="#module-surface" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">abstractcamera</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CameraManager</span><span class="p">,</span>           <span class="c1"># one camera: the orchestrator (alias: CameraController)</span>
+    <span class="n">CameraHub</span><span class="p">,</span>               <span class="c1"># several cameras at once (one manager/worker each)</span>
+    <span class="n">CameraControlError</span><span class="p">,</span>      <span class="c1"># all camera errors (alias: CameraError)</span>
+    <span class="n">list_cameras</span><span class="p">,</span>            <span class="c1"># non-invasive discovery across transports</span>
+    <span class="n">is_tethering_available</span><span class="p">,</span>  <span class="c1"># gphoto2-shaped transport resolves (PTP-only meaning)</span>
+    <span class="n">get_default_manager</span><span class="p">,</span>     <span class="c1"># process-wide instance + atexit release</span>
+    <span class="n">parse_jpeg_dimensions</span><span class="p">,</span>   <span class="c1"># JPEG SOF probe (no decode)</span>
+    <span class="n">sync_store</span><span class="p">,</span>              <span class="c1"># download ALL device media (ADR 0011); SyncReport out</span>
+    <span class="n">FilesystemMediaStore</span><span class="p">,</span>    <span class="c1"># media store: USB-mounted card (CardLayout-driven)</span>
+    <span class="n">DwarfAlbumMediaStore</span><span class="p">,</span>    <span class="c1"># media store: the DWARF album over Wi-Fi</span>
+    <span class="n">find_card_volumes</span><span class="p">,</span>       <span class="c1"># mounted cards by album signature (never volume label)</span>
+    <span class="n">MediaEntry</span><span class="p">,</span> <span class="n">SyncReport</span><span class="p">,</span>
+    <span class="n">ACTION_WIDGET_NAMES</span><span class="p">,</span> <span class="n">CONFIG_WIDGET_NAMES</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="device-media-downloads-abstractcamera-download-adr-0011">Device media downloads (<code>abstractcamera download</code>, ADR 0011)<a class="headerlink" href="#device-media-downloads-abstractcamera-download-adr-0011" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sync_store(store, dest=None, *, delete=False, delete_protected=False, dry_run=False, log=print)</code></td>
+<td>Downloads every media file <code>store</code> lists into <code>dest</code> (default <code>~/Pictures/&lt;store.device_slug&gt;/</code>), size-verified and incremental — <code>protected</code> entries (the device calibration library) are always DOWNLOADED. With <code>delete</code>, removes device copies that verify locally AT DELETE TIME; protected entries survive unless <code>delete_protected</code> (CLI: <code>--delete-calibrations</code>) opts in; unverifiable entries never delete. Returns a <code>SyncReport</code> (copied/skipped/deleted/deleted_protected/protected/failures).</td>
+</tr>
+<tr>
+<td><code>FilesystemMediaStore(root, layout=DWARF_CARD_LAYOUT)</code></td>
+<td>Any mounted device card. <code>CardLayout</code> declares the album dirs, protected subtrees, and the local slug — adding a device's card is a declaration, not code.</td>
+</tr>
+<tr>
+<td><code>DwarfAlbumMediaStore(host)</code></td>
+<td>The DWARF album over Wi-Fi: REST index, streamed downloads, <code>/album/delete</code>.</td>
+</tr>
+<tr>
+<td><code>find_card_volumes()</code></td>
+<td><code>(mount_point, layout)</code> for volumes matching a known card signature under <code>/Volumes</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>A MediaStore adapter is ~6 methods (<code>list_media</code>/<code>fetch</code>/<code>delete</code>/
+<code>finalize_delete</code>/<code>describe</code>/<code>validate</code> + <code>device_slug</code>, <code>can_delete</code>) —
+the sync engine owns all safety rules, so new devices (PTP cards over
+libgphoto2 are next) inherit them unchanged.</p>
+<h2 id="camerahub-multi-camera-hosts">CameraHub (multi-camera hosts)<a class="headerlink" href="#camerahub-multi-camera-hosts" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CameraHub(capture_root=None, manager_factory=None)</code></td>
+<td>Registry of live managers keyed by device uid. <code>capture_root</code> is applied to every new manager.</td>
+</tr>
+<tr>
+<td><code>configure_managers(capture_root=, frame_analyzer=)</code></td>
+<td>Shared configuration applied to every new connection.</td>
+</tr>
+<tr>
+<td><code>list_cameras()</code></td>
+<td>Discovery entries annotated with live state: <code>connected</code>, <code>device_uid</code>, <code>active</code>.</td>
+</tr>
+<tr>
+<td><code>annotate_entries(entries)</code></td>
+<td>(Re)annotate cached discovery entries with CURRENT live state — for callers that cache the USB probe but must never serve stale connection flags.</td>
+</tr>
+<tr>
+<td><code>connect(camera_id=None)</code></td>
+<td>Connects (or returns the existing session for that id) and makes it ACTIVE. Other cameras keep running. Returns the status dict (+<code>device_uid</code>, <code>active</code>).</td>
+</tr>
+<tr>
+<td><code>manager_for(device_uid=None)</code></td>
+<td>The addressed <code>CameraManager</code> (None = the active one). Raises with honest text when absent.</td>
+</tr>
+<tr>
+<td><code>select(device_uid)</code></td>
+<td>Re-point the ACTIVE selection (single-panel hosts bind their controls to it).</td>
+</tr>
+<tr>
+<td><code>statuses()</code></td>
+<td><code>device_uid -&gt; status()</code> for every live camera (+<code>active</code> flag).</td>
+</tr>
+<tr>
+<td><code>disconnect(device_uid=None)</code> / <code>disconnect_all()</code></td>
+<td>Tear down one (active fallback: any survivor) or all.</td>
+</tr>
+</tbody>
+</table>
+<p>Device uid = the device slug (model/label snake_case, e.g. <code>nikon_z6_2</code>,
+<code>macbook_pro_camera</code>), suffixed by serial tail or index when two identical
+bodies are connected. Captures land in <code>&lt;capture_root&gt;/&lt;device_uid&gt;/</code>.</p>
+<h2 id="cameramanager-all-methods-thread-safe">CameraManager (all methods thread-safe)<a class="headerlink" href="#cameramanager-all-methods-thread-safe" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connect(camera_id=None)</code></td>
+<td>Claims the camera (default: first PTP body, else built-in webcam). Family defaults are applied with visible catch-log events. Raises <code>CameraControlError</code> with honest text.</td>
+</tr>
+<tr>
+<td><code>disconnect()</code></td>
+<td>Stops the worker (10s join), flushes deferred downloads first.</td>
+</tr>
+<tr>
+<td><code>list_cameras()</code></td>
+<td>Discovery entries: <code>{id, transport, name, name_confidence, default, ...}</code>.</td>
+</tr>
+<tr>
+<td><code>status()</code></td>
+<td>Full state: <code>available, connected, model, family, transport, camera_id, capabilities, config, pending_writes, fps, preview_size, detection_*, downloads_pending, rolling, interval, capture_mode, burst_*, movie_recording, last_error</code>.</td>
+</tr>
+<tr>
+<td><code>get_latest_frame()</code></td>
+<td><code>(jpeg_bytes | None, sequence_int)</code> — the live-view frame.</td>
+</tr>
+<tr>
+<td><code>set_config_value(name, value)</code></td>
+<td>Queues a widget write; tracked in the <code>pending_writes</code> ledger until confirmed or explicitly reverted. Validated against the family's widget list.</td>
+</tr>
+<tr>
+<td><code>request_trigger()</code></td>
+<td>Fires the current capture mode (single/burst/video toggle). Refused during interval sequences.</td>
+</tr>
+<tr>
+<td><code>request_action(name, value=None)</code></td>
+<td>One-shot actions; never cached, never replayed. Canonical focus actions (<code>autofocusdrive</code>, <code>manualfocusdrive</code>) plus the family's own (<code>status()["actions"]</code> — the DWARF family adds mount actions: <code>gotoradec</code> "ra_deg,dec_deg[,label]", <code>gotosolar</code> "moon"/"jupiter"/..., <code>stopgoto</code>, <code>calibrate</code>, <code>joystick</code> "angle_deg,length,speed", <code>joystickstop</code>).</td>
+</tr>
+<tr>
+<td><code>set_capture_mode(mode, burst_count=, burst_hold_s=, burst_speed=)</code></td>
+<td><code>single|burst|video</code>; burst knobs are family-dependent (see <code>capabilities.burst.mode</code>).</td>
+</tr>
+<tr>
+<td><code>set_detection_mode(mode, target=, sensitivity=)</code></td>
+<td><code>off|monitor|auto</code> × <code>lightning|meteor|motion</code>; auto-fire is arbitrated against sequences.</td>
+</tr>
+<tr>
+<td><code>start_interval_sequence(interval_s, count, start_delay_s=0, liveview=True, sequence_name=None)</code></td>
+<td>Absolute-deadline intervalometer; validates exposure vs interval (family <code>nominal_exposure_s</code> when no shutter widget exists); JSONL manifest per sequence. <code>sequence_name</code> names the run (see <code>set_sequence_name</code>).</td>
+</tr>
+<tr>
+<td><code>stop_interval_sequence()</code></td>
+<td>Graceful stop; terminal ledger persists in <code>status()["interval"]</code>.</td>
+</tr>
+<tr>
+<td><code>set_rolling_buffer(enabled, seconds=)</code> / <code>save_rolling_clip()</code></td>
+<td>Last-N-seconds pre-capture ring; snapshot to MP4 (<code>[clips]</code>).</td>
+</tr>
+<tr>
+<td><code>get_events(since_id=0)</code> / <code>clear_events()</code></td>
+<td>Catch log (captures, detections, config honesty, errors) with thumbnails.</td>
+</tr>
+<tr>
+<td><code>set_capture_root(path)</code></td>
+<td>Device-layout root (default <code>~/Pictures</code>): captures land in <code>&lt;root&gt;/&lt;device_slug&gt;/</code>.</td>
+</tr>
+<tr>
+<td><code>set_sequence_name(name)</code></td>
+<td>Names the shooting sequence: everything captured while set (stills, bursts, movies, clips, manifests) nests in <code>.../&lt;sequence_name&gt;/</code>. <code>None</code> clears.</td>
+</tr>
+<tr>
+<td><code>set_save_policy(download_locally)</code></td>
+<td><code>False</code> leaves captures on the camera's own storage (announced, never fetched); refused honestly by families without storage (<code>capabilities.save_to.modes</code>). Warns loudly when combined with a volatile capture target.</td>
+</tr>
+<tr>
+<td><code>set_capture_dir(path)</code> / <code>set_frame_analyzer(fn)</code></td>
+<td>Host integration: legacy explicit download directory (overrides the device layout); injected lightning analyzer.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-capabilities-descriptor-statuscapabilities">The capabilities descriptor (<code>status()["capabilities"]</code>)<a class="headerlink" href="#the-capabilities-descriptor-statuscapabilities" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="s2">&quot;family&quot;</span><span class="p">:</span> <span class="s2">&quot;sony_alpha&quot;</span> <span class="o">|</span> <span class="s2">&quot;nikon_z&quot;</span> <span class="o">|</span> <span class="s2">&quot;webcam&quot;</span> <span class="o">|</span> <span class="s2">&quot;dwarf&quot;</span> <span class="o">|</span> <span class="s2">&quot;generic&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;display_name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+  <span class="s2">&quot;config_widgets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>      <span class="c1"># dials this family can EVER have (hide the rest)</span>
+  <span class="s2">&quot;burst&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;count&quot;</span><span class="o">|</span><span class="s2">&quot;duration&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">},</span>
+  <span class="s2">&quot;movie&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;can_preflight&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;can_confirm&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="o">|</span><span class="kc">None</span><span class="p">},</span>
+  <span class="s2">&quot;iso_auto&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;widget&quot;</span><span class="o">|</span><span class="s2">&quot;choice&quot;</span><span class="o">|</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">},</span>
+  <span class="s2">&quot;save_to&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;volatile_values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="s2">&quot;recommended_value&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span>
+               <span class="s2">&quot;modes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="s2">&quot;local&quot;</span><span class="p">]},</span>  <span class="c1"># webcam: [&quot;local&quot;] (no onboard storage)</span>
+  <span class="s2">&quot;focus&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;supported&quot;</span><span class="err">?</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span> <span class="s2">&quot;mf_requires_manual_focus&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;indication_widget&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">},</span>
+  <span class="s2">&quot;preview_during_exposure&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+  <span class="s2">&quot;exposure_controls&quot;</span><span class="err">?</span><span class="p">:</span> <span class="n">false</span><span class="p">,</span>  <span class="c1"># webcam: the hardware auto-exposes, period</span>
+  <span class="s2">&quot;mount&quot;</span><span class="err">?</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;alt-az&quot;</span><span class="p">,</span> <span class="s2">&quot;goto&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="s2">&quot;joystick&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>   <span class="c1"># smart telescopes</span>
+             <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;tracking&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">},</span>
+  <span class="s2">&quot;actions&quot;</span><span class="err">?</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>            <span class="c1"># family actions beyond the focus drives</span>
+  <span class="s2">&quot;notes&quot;</span><span class="err">?</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="extending-a-new-family">Extending: a new family<a class="headerlink" href="#extending-a-new-family" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Subclass <code>CameraAdapter</code> (<code>adapters/base.py</code>) — or <code>GenericPtpAdapter</code>
+   for a PTP body — and encode the family's measured behaviors in the
+   receipt methods (<code>write_widget</code>, <code>fire_single</code>, <code>fire_burst</code>,
+   <code>toggle_movie</code>, <code>run_action</code>, <code>classify_event</code>, <code>capabilities</code>).</li>
+<li>If the family is not gphoto2-transported, implement a <code>CameraSession</code>
+   (see <code>session.py</code> for the behavioral contract; <code>WebcamSession</code> is the
+   reference) and a <code>Driver</code> (<code>drivers/</code>).</li>
+<li>Register: model match in <code>adapters/select_adapter</code> and/or a driver in
+   <code>discovery.resolve_drivers</code>.</li>
+<li>Add the family to the conformance parametrization in
+   <code>tests/test_session_protocol.py</code> and validate on real hardware before
+   claiming support (ADR 0006/0008).</li>
+</ol>
+<h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
+<p>Everything raises <code>CameraControlError</code> with user-actionable text (which
+device, which cause, what to do). Transport absence is a normal state:
+<code>status()["available"]</code> is False and connects refuse with install hints.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

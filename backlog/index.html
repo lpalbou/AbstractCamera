@@ -1,0 +1,945 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multi-camera control for Python — tethered PTP bodies, webcams, DWARF telescopes, and AbstractCore AI tool integration.">
+      
+      
+      
+        <link rel="canonical" href="https://www.lpalbou.info/AbstractCamera/backlog/">
+      
+      
+        <link rel="prev" href="../troubleshooting/">
+      
+      
+        <link rel="next" href="../adr/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Backlog - AbstractCamera</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#backlog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AbstractCamera" class="md-header__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AbstractCamera
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Backlog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AbstractCamera" class="md-nav__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AbstractCamera
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backlog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Completed
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="backlog">Backlog<a class="headerlink" href="#backlog" title="Permanent link">&para;</a></h1>
+<h2 id="open-items">Open items<a class="headerlink" href="#open-items" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0001</td>
+<td>Size-aware rolling ring</td>
+<td>The pre-capture ring is seconds-based; at 1080p/q85 a 10s ring is ~66-130MB (disclosed in docs). A byte-budgeted ring would bound memory explicitly.</td>
+</tr>
+<tr>
+<td>0002</td>
+<td>Bulb exposures</td>
+<td>Both validated PTP bodies refuse remote <code>Bulb</code> writes; the <code>bulb</code> action toggle on Sony is accepted but unvalidated. Needs a hardware session dedicated to bulb choreography + timing ownership.</td>
+</tr>
+<tr>
+<td>0004</td>
+<td>Webcam duration bursts</td>
+<td>Count mode shipped (validated); <code>round(hold_s * fps)</code> duration bursts are trivial if a host wants the Sony-style knob on webcams.</td>
+</tr>
+<tr>
+<td>0005</td>
+<td>Linux/Windows webcam drivers</td>
+<td>The webcam driver is macOS/AVFoundation only (honest <code>available()=False</code> elsewhere); v4l2 and DirectShow enumeration are future families of work.</td>
+</tr>
+<tr>
+<td>0006</td>
+<td>Canon EOS family</td>
+<td><code>eosremoterelease</code> press choreography, EOS event vocabulary; one adapter file + a <code>select_adapter</code> match when a body is available to measure.</td>
+</tr>
+<tr>
+<td>0008</td>
+<td>Sony trigger-drop root cause</td>
+<td>The A7R IV intermittently accepts <code>trigger_capture</code> and never fires, even in Manual focus (observed 2026-07-12; the expectation watch reports each drop honestly). Root cause unknown — candidate: internal busy states while digesting settings/card writes. Needs a dedicated hardware session correlating drops with preceding operations.</td>
+</tr>
+<tr>
+<td>0009</td>
+<td>Hub-level "fire all" choreography</td>
+<td>The hub pilots cameras independently; a synchronized multi-camera trigger (single wall-clock deadline across bodies) would serve rigs. Needs per-family latency compensation to be meaningful.</td>
+</tr>
+<tr>
+<td>0011</td>
+<td>Core-side camera facade + <code>/v1/camera/*</code> server routes</td>
+<td>Asked to the core seat at commons c3135: <code>CameraCapability</code> protocol, <code>_CameraFacade</code>, <code>register_camera_backend</code>, "camera" in <code>status()</code>, <code>core.camera</code> property, extension endpoints (<code>/v1/audio/music</code> precedent). Camera-side is ready (ADR 0012); core owns the merge.</td>
+</tr>
+<tr>
+<td>0018</td>
+<td>Artifact-branch size cap + residual P2s</td>
+<td><code>_attach_capture_payload</code> reads whole files into RAM; the 64MB cap guards only the inline branch — the <code>artifact_store</code> branch hands unbounded bytes (600s MP4 = hundreds of MB) to byte-in-memory stores (<code>abstractcore_plugin.py:377-391</code>). Fix: cap the artifact branch too, name the file path in the error. Also P2s from the 2026-07-21 passes: connect-timeout zombie thread (<code>camera_manager.py</code> worker assign-after-wait), sim claim-registry gap (double-open succeeds in sim where PTP wedges — add exclusive-claim so lifecycle races fail in CI), error texts routing agents to surfaces they cannot reach (sync_store hints in tool errors), hub default-connect skipping already-claimed devices (behavior change; docstring warns today).</td>
+</tr>
+<tr>
+<td>0020</td>
+<td>DWARF astro choreography through service/tools (proposed — <strong>PARKED until ~Aug 4</strong>, operator ruling c4089: "Forget about the Dwarf for the next 2 weeks")</td>
+<td>The flagship physical-world demo: an agent slews the telescope to a target, calibrates, and runs a capture sequence. Blocked on two lanes (adversarial roadmap 2026-07-21): the DWARF control lane is implemented from the published spec but not hardware-validated (<code>scripts/validate_dwarf.py</code> is the moment of truth; only the card/media half has real-hardware validation), and the service/tool surface exposes neither <code>request_action</code> (GOTO lives only on CameraManager) nor <code>start_interval_sequence</code>. Order: hardware session → expose actions+sequences through service/tools → choreography as a flow/skill, never package code.</td>
+</tr>
+<tr>
+<td>0021</td>
+<td>Config-channel reach for deployment defaults (env adversary P2, 2026-07-21)</td>
+<td>The env-classification adversary confirmed ZERO behavior env vars (nothing to migrate under dm#177), but named two deployment-var reach gaps worth closing so "configurable on the gateway/console" holds fully: (a) <strong>capture-root console reach</strong> — owner/console config (<code>_owner_cfg("camera_capture_root")</code>) is read only in the capability plugin lane; the tool lane (<code>get_shared_service()</code> in abstractcore_tools) and CLI read env-or-default only, and the process-shared hub is last-caller-wins, so a tool-opened camera can keep the env layout after console config lands. Fix: resolve owner/console config at shared-service resolution, not only in the capability constructor. (b) <strong>DWARF hosts config surface</strong> — <code>ABSTRACTCAMERA_DWARF_HOSTS</code>/<code>_CLIENT_ID</code> have NO config surface at all (every production path constructs <code>DwarfDriver()</code> bare; env is the sole control); carry them through the owner-config channel at DWARF unpark (config-wins over env). Both are deployment-class (data dir / device addresses), env-legitimate today; these are polish toward the ruling's second half, not behavior migrations. P3 also: <code>_CONFIG_HINT</code> should lead with the config key and demote the env spelling.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="completed">Completed<a class="headerlink" href="#completed" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0019</td>
+<td>Sight lane, camera's half (operator GO c4089): every result landing a LOCAL file (capture_photo/capture_video/stop_recording/preview_photo) carries handler-authored <code>media</code> — bare paths on the storeless tool lane, <code>{"$artifact": id}</code> refs on the capability lane (plugin <code>stop_recording</code> gained the same payload lane as capture_video — asymmetry caught by the adversary). Absent when no file landed (deferred/on-device/undelivered, all three pinned). fable5 adversary: SHIP, 0 P0/P1, 5 P2 folded. get_events rows deliberately out of scope (N-image pages vs single-result caps) — named on the ruling thread.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0013</td>
+<td>P0: <code>/v1/camera/*</code> routes blocked core's event loop (one 600s video capture serialized the whole server). All eleven handlers converted sync-def (FastAPI threadpool, the audio_speech precedent) + router-iterating pin test; core owner-reviewed and ACCEPTED (c3987) and applied the same pin to its audio lane same-hour.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0014</td>
+<td>P1 lifecycle trio (all empirically reproduced pre-fix): concurrent <code>open()</code> double-claim (service + hub now serialize the whole claim window; retries JOIN in-flight opens), unplug→re-open uid drift + dead-manager leak (connect reaps corpses, uid + capture folder restored; worker clears frame/ring on every exit), missing shared-service atexit (close_all with bounded joins at clean exit). Test-pinned.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0015</td>
+<td>Event-log wire contract: <code>session</code> epoch (reconnect = NEW id space — events cleared, ids restart; direct-manager path fixed by the adversary), <code>evicted</code>/<code>first_retained_id</code> gap signal, <code>trigger_id</code> correlation (announce-time stamping; capture waits skip stale-stamped photo AND error events; sequence frames are numbered acts), structured detection <code>metrics</code>, all seven kinds documented. ADR 0013.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0016</td>
+<td>Detection→event API (RE-SCOPED 2026-07-21, operator dm#14 — the <code>abstractcamera watch</code> daemon + <code>gateway_bridge.py</code> were DELETED). Kept: in-process detection + the cursor-contracted event log (session epoch, eviction signal, trigger_id, metrics) readable via <code>camera_get_events</code> / <code>detection_events</code> / <code>/v1/camera/events</code>. Deleted: the daemon that reached UP to the gateway (a dependency of abstractcore must never encode the gateway's command API from below). The wake-on-motion PRODUCER belongs at a framework entry (core/gateway durable run, or a flow consuming the event API — the flow <code>wait_event</code>/<code>on_event</code> consumer is proven to exist, ADR 0013). Producer owner: open, coordinated with core/runtime/gateway. CAMERA-SIDE IMPROVEMENT the producer MAY request (layering-purity adversary 2026-07-21): <code>get_events</code> is poll-only, so wake latency is bounded by the producer's poll cadence; a bounded blocking <code>wait_for_events(since_id, timeout_s)</code> on the service/tool surface would let a durable producer long-poll cheaply (no LLM per check) — an ADDITION for the producer's owner to ask for, never a restoration of the daemon.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0017</td>
+<td><code>camera_preview_photo</code> (eleventh tool; look without firing the shutter — live-proven on the MBP webcam) + camera skill draft (<code>skills/camera-piloting/SKILL.md</code>, handed to the skill seat). One adversarial subagent over the whole wave per laurent's condition: 2 P1 / 8 P2, all folded + pinned (ADR 0013 § Adversarial folds); 305 tests green.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0012</td>
+<td>Runtime/gateway camera toolset lane: camera half — <code>camera_tool_approval_defaults()</code> derives approval tiers from <code>CAMERA_TOOL_CLASSIFICATION</code> (fail-closed: drifted entries can only be stricter; every <code>captures_environment</code> tool DEFAULTS to require-approval). Runtime half accepted + wired into <code>ToolApprovalPolicy</code> by the runtime seat (originally behind an explicit env flag — REMOVED same-day by operator ruling dm#10: installed = registered, apps own tool gating); gateway door-half proceeding in gateway's lane. Triple adversarial passes (camera/runtime/gateway) — the operator's 0012 two-adversary gate MET. Privacy question CLOSED by operator ruling (commons c3938): the defaults are user-overridable like any tool — a default, not a floor.</td>
+<td>2026-07-21</td>
+</tr>
+<tr>
+<td>0010</td>
+<td>AbstractCore capability plugin + AI tool set (ADR 0012): <code>CameraService</code> sync layer, <code>camera</code> capability via the generic registry path (entry point <code>abstractcore.capabilities_plugins</code>), ten classified <code>camera_*</code> tools, sim-backed integration tests against core's real CapabilityRegistry/ToolRegistry; 2 adversarial subagent passes</td>
+<td>2026-07-19</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Extraction from BlackPixel + Sony/webcam hardware validation</td>
+<td>2026-07-12</td>
+</tr>
+<tr>
+<td>0007</td>
+<td>Nikon Z re-validation through the package: 18/18 on the Z6 II (connect-by-id among two PTP bodies, ledger writes, single/burst/named sequence). Bonus honesty: unformatted-card warnings at connect + named trigger-failure causes. <code>scripts/validate_nikon.py</code></td>
+<td>2026-07-12</td>
+</tr>
+<tr>
+<td>0003</td>
+<td>AVFoundation device identity — closed by ADR 0009 after the positional mapping INVERTED on hardware: webcam ids are uniqueIDs, capture is native AVFoundation by uniqueID (2-design adversarial review; 11/11 <code>scripts/validate_webcam_identity.py</code>; the pyobjc dependency was weighed and accepted as base, darwin-only)</td>
+<td>2026-07-12</td>
+</tr>
+<tr>
+<td>—</td>
+<td>CameraHub multi-camera piloting + device-slug capture layout (<code>~/Pictures/&lt;device&gt;/[&lt;sequence&gt;/]</code>) + save policy; 16/16 four-camera simultaneous hardware validation. <code>scripts/validate_multicam.py</code>, ADR 0008</td>
+<td>2026-07-12</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

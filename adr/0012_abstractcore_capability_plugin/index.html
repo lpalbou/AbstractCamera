@@ -1,0 +1,1006 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multi-camera control for Python — tethered PTP bodies, webcams, DWARF telescopes, and AbstractCore AI tool integration.">
+      
+      
+      
+        <link rel="canonical" href="https://www.lpalbou.info/AbstractCamera/adr/0012_abstractcore_capability_plugin/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ADR 0012 — AbstractCore integration: one service, capability plugin + explicit tool set - AbstractCamera</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adr-0012-abstractcore-integration-one-service-capability-plugin-explicit-tool-set" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AbstractCamera" class="md-header__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AbstractCamera
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADR 0012 — AbstractCore integration: one service, capability plugin + explicit tool set
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AbstractCamera" class="md-nav__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AbstractCamera
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backlog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consequences
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-rulings-folded-commons-c3168-2026-07-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core rulings folded (commons c3168, 2026-07-19)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-ruling-folded-commons-c3938-2026-07-21-defaults-not-a-floor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator ruling folded (commons c3938, 2026-07-21): defaults, not a floor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adversarial-folds-2-subagent-passes-2026-07-19-1-p0-8-p1-15-p2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adversarial folds (2 subagent passes, 2026-07-19 — 1 P0 / 8 P1 / 15 P2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-ruling-folded-dm16-20-2026-07-22-tools-flow-through-core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator ruling folded (dm#16-20, 2026-07-22): tools flow THROUGH core
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="adr-0012-abstractcore-integration-one-service-capability-plugin-explicit-tool-set">ADR 0012 — AbstractCore integration: one service, capability plugin + explicit tool set<a class="headerlink" href="#adr-0012-abstractcore-integration-one-service-capability-plugin-explicit-tool-set" title="Permanent link">&para;</a></h1>
+<p>Date: 2026-07-19 · Status: accepted</p>
+<h2 id="context">Context<a class="headerlink" href="#context" title="Permanent link">&para;</a></h2>
+<p>The operator directed abstractcamera to become an optional AbstractCore
+capability plugin the way abstractvision/abstractvoice extend core: turn a
+camera on/off, take photo/video, motion-detect-and-capture — plus a tool
+set so an AI, agent, or entity can drive it, surfaced on the AbstractCore
+server. AbstractCore is the target: camera adapts to core's existing
+patterns, never the reverse.</p>
+<p>Investigation facts (2026-07-19, verified against both reference plugins
+and core's registry):</p>
+<ul>
+<li>Core discovers plugins via the <code>abstractcore.capabilities_plugins</code> entry
+  point group; <code>register(registry)</code> receives a duck-typed registry — a
+  plugin needs ZERO imports from abstractcore.</li>
+<li>Core's registry has typed helpers (voice/audio/vision/music/scene3d) and
+  hardcoded facades, but the GENERIC <code>register_backend(capability=...)</code>
+  path plus generic discovery routes (<code>available_providers</code>, <code>list_models</code>,
+  <code>list_operations</code>) work for ANY capability string TODAY. A first-class
+  <code>core.camera</code> facade, <code>CameraCapability</code> protocol, and <code>/v1/camera/*</code>
+  server routes require core-side additions (asked at commons c3135; core
+  owns that merge).</li>
+<li>Core's builtin tool inventory is deliberately core-only and global tool
+  registration is deprecated: the durable tool contract is EXPLICIT tools
+  passed to <code>generate(tools=...)</code> or registered on a host executor
+  (AbstractRuntime toolsets are the later runtime/gateway lane).</li>
+<li>CameraManager triggers are asynchronous (worker fires; results surface
+  as catch-log events). Request/response callers need a synchronous
+  "capture and tell me where it landed" layer that does not exist.</li>
+</ul>
+<h2 id="decision">Decision<a class="headerlink" href="#decision" title="Permanent link">&para;</a></h2>
+<ol>
+<li>
+<p><strong>One service, N surfaces.</strong> <code>service.py</code> (<code>CameraService</code>) is the
+   synchronous dict-in/dict-out operation layer over a <code>CameraHub</code>:
+   list/open/close/status/preview_frame/capture_photo/capture_video/
+   start_detection/stop_detection/get_events. Capture completion is
+   resolved by watching the per-camera event log from a watermark taken
+   BEFORE the trigger; waits are bounded and timeouts are honest errors.
+   The capability plugin, the tool set, and any future HTTP route all
+   delegate here — the safety/arbitration rules stay in CameraManager,
+   the request/response adaptation exists exactly once.</p>
+</li>
+<li>
+<p><strong>Process-shared service.</strong> Cameras are process-wide hardware (a body
+   claimed by two hubs wedges the transport), so both integration surfaces
+   resolve <code>get_shared_service()</code>: an agent that opened a camera through a
+   tool and a host calling <code>core.camera.capture_photo(...)</code> address the
+   SAME session.</p>
+</li>
+<li>
+<p><strong>Capability via the generic registry path.</strong>
+   <code>integrations/abstractcore_plugin.py::register(registry)</code> uses
+   <code>registry.register_backend(capability="camera", backend_id=
+   "abstractcamera:hub", ...)</code> — works on today's core unchanged — and
+   automatically prefers a typed <code>register_camera_backend(...)</code> when core
+   ships one. Capability methods RAISE <code>CameraControlError</code> on failure
+   (core's facade/server convention); the service's success/error dicts
+   are unwrapped at this boundary. Capture payloads follow the vision
+   plugin's conventions: paths by default, bytes on <code>include_bytes=True</code>,
+   <code>{"$artifact": ...}</code> refs when an <code>artifact_store</code> is provided.</p>
+</li>
+<li>
+<p><strong>Tools are explicit, classified, and camera-owned.</strong>
+   <code>integrations/abstractcore_tools.py</code> ships ten <code>camera_*</code> tools as
+   <code>@tool</code>-decorated functions plus <code>camera_tools()</code> /
+   <code>camera_tool_definitions()</code> / <code>camera_tool_specs()</code> accessors — no
+   global registration, no entry-point magic. The module declares the
+   facts this package owns about its OWN tools
+   (<code>CAMERA_TOOL_CLASSIFICATION</code>: mutating / remote_write_capable /
+   <code>captures_environment</code>), exhaustively both ways (core's inventory
+   rule). <code>captures_environment</code> is the camera-specific fact approval and
+   privacy layers must key on: these tools photograph the physical world.</p>
+</li>
+<li>
+<p><strong>The simulator is the CI hardware.</strong> All integration tests run against
+   core's REAL <code>CapabilityRegistry</code> / <code>ToolRegistry</code> with
+   <code>ABSTRACTCAMERA_FAKE=1</code> (or an injected <code>FakeDriver</code>) — the entry
+   point, registration, discovery routes, capture flows, and tool
+   execution are exercised end-to-end with zero devices attached.</p>
+</li>
+</ol>
+<h2 id="consequences">Consequences<a class="headerlink" href="#consequences" title="Permanent link">&para;</a></h2>
+<ul>
+<li>abstractcamera keeps zero hard dependency on abstractcore; the entry
+  point is inert until abstractcore is installed beside it.</li>
+<li>Until core lands the camera facade, Python callers use
+  <code>core.capabilities.available_providers("camera")</code> (generic routes) or
+  the plugin/tool surfaces directly; <code>status()</code> does not list "camera"
+  (core-side, asked).</li>
+<li>Server <code>/v1/camera/*</code> routes are core-side work (extension endpoints —
+  OpenAI has no camera API; <code>/v1/audio/music</code> is the precedent).</li>
+<li>Runtime/gateway toolset registration (approval tiers, entity grants) is
+  a follow-up lane and consumes <code>camera_tool_definitions()</code> +
+  <code>CAMERA_TOOL_CLASSIFICATION</code> as its source of truth.</li>
+</ul>
+<h2 id="core-rulings-folded-commons-c3168-2026-07-19">Core rulings folded (commons c3168, 2026-07-19)<a class="headerlink" href="#core-rulings-folded-commons-c3168-2026-07-19" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Capability name "camera" + the op set APPROVED. Contract hardened: every
+  capability op returns JSON-SAFE dicts (results may land in runtime
+  ledgers) — <code>include_bytes=True</code> therefore attaches base64 (<code>data_b64</code>),
+  never raw bytes; capture bytes ride <code>artifact_store</code> when provided.
+  <code>detection_events</code> stays non-blocking poll-shaped (a blocking wait in a
+  capability op would freeze generate-path callers). The protocol stays
+  minimal-required (backend_id + ops; discovery optional-by-duck-typing).</li>
+<li>Core-side surface: camera drafts the patch IN CORE'S TREE (separate
+  files: <code>server/camera_endpoints.py</code>; additive marked blocks in types.py/
+  registry.py), core owner-reviews and merges. Routes follow the
+  <code>/v1/audio/music</code> precedent exactly — 501 with install_hint when the
+  plugin is absent; photo response OpenAI-images-shaped
+  <code>{created, data: [{b64_json}]}</code>.</li>
+<li>Tools stay EXPLICIT-IMPORT, deliberately no entry-point group (core's
+  security rationale, verbatim intent): tools are a security surface —
+  entry-point auto-registration would let <code>pip install anything</code> silently
+  widen every agent's tool surface, breaking grant semantics (grants are
+  capability-level by name; containment binds at composition — a host must
+  consciously compose which ToolDefinitions it registers). A future group,
+  if ever, would serve discovery-not-registration and needs its own
+  security review.</li>
+<li>The new classification tag string <code>captures_environment</code> requires a
+  semantics pass before engraving into shipped definitions (asked commons
+  c3172; <code>mutating</code>/<code>remote_write_capable</code> are the existing inventory
+  vocabulary and ride unchanged). PASSED same-day (c3176) with one
+  amendment adopted verbatim: the definition is SENSOR-GENERAL (any
+  ambient sensor — camera today, a microphone tool tomorrow; screen
+  capture deliberately out), so future audio tools extend this one privacy
+  axis instead of minting siblings. General shape for domain tags recorded
+  as decision:domain-tool-classification-tags.</li>
+</ul>
+<h2 id="operator-ruling-folded-commons-c3938-2026-07-21-defaults-not-a-floor">Operator ruling folded (commons c3938, 2026-07-21): defaults, not a floor<a class="headerlink" href="#operator-ruling-folded-commons-c3938-2026-07-21-defaults-not-a-floor" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>camera_tool_approval_defaults()</code> ships ask-by-default for every tool
+  with any true fact, and that is a DEFAULT, not a floor: the operator
+  ruled "a user must be able to auto accept camera or ask the agent to
+  request permissions, like for any other tool." Host policies (e.g.
+  AbstractRuntime's run-scoped tool_policy) may auto-accept
+  <code>captures_environment</code> tools on the user's explicit say-so. What the
+  derivation guarantees is narrower and permanent: capture never
+  auto-approves WITHOUT a user's choice, and a drifted classification
+  entry fails closed to require-approval. The never-auto contingency
+  (a host-side hard floor) is dead.</li>
+</ul>
+<h2 id="adversarial-folds-2-subagent-passes-2026-07-19-1-p0-8-p1-15-p2">Adversarial folds (2 subagent passes, 2026-07-19 — 1 P0 / 8 P1 / 15 P2)<a class="headerlink" href="#adversarial-folds-2-subagent-passes-2026-07-19-1-p0-8-p1-15-p2" title="Permanent link">&para;</a></h2>
+<p>Two independent adversaries (code/logic; consumer-contract) attacked the
+integration. Every accepted finding is folded and test-pinned:</p>
+<ul>
+<li><strong>P0 — capture-mode writes bypassed the capture lock</strong>: the trigger is a
+  TOGGLE in video mode, so an unguarded <code>set_capture_mode</code> during a bounded
+  recording turned its stop toggle into a still trigger and STRANDED the
+  recording with no stop surface. Now: <code>start_detection</code> takes the
+  per-camera capture lock; <code>capture_photo</code>/<code>start_detection</code> refuse while
+  <code>movie_recording</code>; <code>capture_video</code> refuses while auto-fire is armed; and
+  <code>stop_recording()</code> exists as the escape hatch (service op, capability op,
+  and the tenth tool).</li>
+<li><strong>Deferred-download honesty</strong>: armed auto-fire defers downloads by
+  design, so <code>capture_photo</code> under it ALWAYS timed out; it now returns an
+  honest deferred success. A flushing backlog could be mis-attributed as a
+  new capture's result (photo events carry no trigger correlation); capture
+  now refuses while <code>downloads_pending &gt; 0</code> outside armed mode.</li>
+<li><strong>Wait-loop discipline</strong>: movie-state waits filter error events by
+  capture-shaped reason (a config-honesty revert was reported as the
+  recording's failure while it recorded on) and re-check actual state
+  before failing; timeouts carry a <code>timed_out</code> sentinel (a "Timed out"
+  SUBSTRING match had converted a real download failure into success);
+  waits fail fast when the camera disconnects mid-capture.</li>
+<li><strong>No-raise contract</strong>: all numeric inputs coerce via
+  <code>service_support.coerce_number/coerce_int</code> and fail as dicts BEFORE any
+  hardware acts (a bad <code>timeout_s</code> used to raise bare ValueError AFTER the
+  recording ran).</li>
+<li><strong>Import weight</strong>: <code>import abstractcamera</code> and the plugin module are now
+  LAZY (PEP 562) — core processes listing capabilities no longer pay the
+  OpenCV import; the camera stack loads on first use.</li>
+<li><strong>Consumer truths</strong>: <code>available_providers()</code> carries full provider
+  records through core's normalizer (bare strings made uninstalled
+  transports read "available"); ABSTRACTCAMERA_CAPTURE_ROOT is honored at
+  the shared-service choke point (the tools path ignored it); default
+  <code>open()</code> is idempotent (a retry double-claimed the device); tool
+  descriptions teach the two id spaces on the wire itself (docstring Args
+  never reach the model; core caps descriptions at 200 chars);
+  <code>camera_tool_specs()</code>/<code>camera_tool_definitions()</code> return isolated copies
+  (a host mutation corrupted the shared schema); artifact-store failures
+  translate to <code>CameraControlError</code>; <code>include_bytes</code> is capped (64MB) with
+  the artifact store named for larger payloads; tests capture into
+  tmpdirs, never the operator's real <code>~/Pictures</code>.</li>
+</ul>
+<p>Deliberately NOT changed: <code>preview_frame</code> returning raw JPEG bytes as the
+RETURN VALUE stays the documented exception to the JSON-safe-dict rule
+(vision-plugin convention; an artifact ref when a store is passed); the
+hub's process-shared capture-root semantics (LAST configurer wins for new
+connections) stay and are documented in the config_hint.</p>
+<h2 id="operator-ruling-folded-dm16-20-2026-07-22-tools-flow-through-core">Operator ruling folded (dm#16-20, 2026-07-22): tools flow THROUGH core<a class="headerlink" href="#operator-ruling-folded-dm16-20-2026-07-22-tools-flow-through-core" title="Permanent link">&para;</a></h2>
+<p>Laurent, verbatim: "THE ONLY PACKAGE THAT CAN AND SHOULD IMPORT ABSTRACT
+CAMERA IS ABSTRACT CORE. IN NO CIRCUMSTANCES OTHER PACKAGES SHOULD IMPORT
+ABSTRACTCAMERA : THEY ALL GO THROUGH THE INTERFACES OF ABSTRACT CORE."
+AbstractRuntime's default toolset had imported
+<code>abstractcamera.integrations.abstractcore_tools</code> directly — a layering
+violation. The fix, one lane, three parts:</p>
+<ul>
+<li><strong>Camera (this plugin)</strong>: <code>register()</code> contributes the tool set via
+  core's <code>register_capability_tools("camera", camera_tool_definitions())</code>
+  and the approval partition via
+  <code>register_capability_tool_policy("camera", camera_tool_approval_defaults())</code>.
+  Duck-typed: an older core without the surface still gets the backend;
+  contribution failure never breaks capability registration.</li>
+<li><strong>Core</strong>: stores + serves both through
+  <code>abstractcore.capabilities.capability_tools("camera")</code> /
+  <code>capability_tool_policy("camera")</code> (module-level accessors over a shared
+  registry; the read side ensure-loads entry-point plugins so a fresh
+  registry cannot silently answer empty for an installed plugin).</li>
+<li><strong>Runtime</strong>: consumes ONLY core's surface — toolset composition uses the
+  served ToolDefinitions' <code>.function</code> callables; the <code>ToolApprovalPolicy</code>
+  fold reads the served partition, fail-closed to empty sets on absence.
+  Zero abstractcamera import statements in runtime src/, pinned by a
+  grep-grade test.</li>
+</ul>
+<p>This refines (does not reverse) the c3168 explicit-tools ruling: there is
+still NO tool entry-point auto-registration — the plugin contributes tools
+to core's REGISTRY (storage + serving), and hosts still consciously compose
+which tools they register. Explicit direct import of
+<code>integrations.abstractcore_tools</code> remains the supported path for hosts at
+or below core; nothing above core may use it.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
