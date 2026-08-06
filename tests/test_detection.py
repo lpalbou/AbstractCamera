@@ -378,12 +378,16 @@ class ControllerIntegrationGates(unittest.TestCase):
             "duration_s": 2.0, "brightness": 170,
         }])
         # Auto-fire happens, file is announced but NOT downloaded.
+        # Wait for the full deferral signal: counter, flag, AND the announce
+        # row (the counter updates inside the lock before _append_event runs).
         self.assertTrue(self.wait_for(
-            lambda: self.controller.status()["downloads_pending"] >= 1, timeout=20.0),
+            lambda: (
+                self.controller.status()["downloads_pending"] >= 1
+                and self.controller.status()["downloads_deferred"]
+                and any(e["kind"] == "photo-pending" for e in self.controller.get_events())
+            ),
+            timeout=20.0),
             f"no deferred download; events: {[(e['kind'], e['note'][:40]) for e in self.controller.get_events()]}")
-        self.assertTrue(self.controller.status()["downloads_deferred"])
-        pending_rows = [e for e in self.controller.get_events() if e["kind"] == "photo-pending"]
-        self.assertTrue(pending_rows, "no photo-pending announce row")
         # Detection must keep running THROUGH the deferral window: preview
         # frames keep advancing (the old code froze here for seconds).
         seq_before = self.controller._latest_frame_seq
