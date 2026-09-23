@@ -315,7 +315,11 @@ class StateMachineGates(FakeCameraHarness):
         with self.assertRaises(CameraControlError):
             self.controller.request_action("manualfocusdrive", "100")  # lens-slam burst hazard
         self.assertTrue(wait_until(lambda: self.interval_status()["state"] == "complete", timeout=15.0))
-        self.assertEqual(self.controller.status()["detection_mode"], "auto")
+        # The terminal state is set under the lock by the worker; the mode
+        # restore runs in _finish_sequence just after it. Wait (bounded) for
+        # the restore instead of racing the worker thread.
+        restored = wait_until(lambda: self.controller.status()["detection_mode"] == "auto", timeout=5.0)
+        self.assertTrue(restored, f"detection mode not restored: {self.controller.status()['detection_mode']!r}")
 
     def test_config_not_starved_at_short_intervals(self):
         """Breaker pin: at interval <= 2s the old fixed 2s safe window NEVER
@@ -360,7 +364,12 @@ class StateMachineGates(FakeCameraHarness):
         fake_gp.configure(preview_fail=True)  # USB pull
         self.assertTrue(wait_until(lambda: self.interval_status()["state"] == "aborted", timeout=15.0),
                         f"sequence not aborted: {self.interval_status()}")
+        # The watchdog aborts the sequence first, then the worker exits
+        # (camera.exit(), flush) and only then clears `connected`. Wait
+        # (bounded) for that exit instead of racing the worker thread.
+        disconnected = wait_until(lambda: not self.controller.status()["connected"], timeout=10.0)
         status = self.controller.status()
+        self.assertTrue(disconnected, "status lies: connected=true after USB death")
         self.assertFalse(status["connected"], "status lies: connected=true after USB death")
         self.assertGreaterEqual(status["interval"]["shots_done"], shots_before)
         self.assertIn("camera lost", str(status["interval"]["last_error"] or "") + " camera lost")
