@@ -49,7 +49,13 @@ BACKEND_ID = "abstractcamera:hub"
 # artifact store, which exists for exactly this.
 MAX_INLINE_CONTENT_BYTES = 64 * 1024 * 1024
 
-_INSTALL_HINT = 'pip install "abstractcamera"'
+# AbstractCore-facing (operator ruling 2026-09-29: an AbstractCore user is only ever told
+# to install `abstractcore`, `abstractcore[apple]` or `abstractcore[gpu]`); no setting ships
+# this plugin, so the hint says so instead of printing a pip command.
+_INSTALL_HINT = (
+    "The camera plugin (abstractcamera) is not part of AbstractCore's install settings "
+    "(light, apple, gpu); it registers when it is present in the same environment."
+)
 _CONFIG_HINT = (
     "No configuration is required for the default device (first tethered PTP "
     "body, else the built-in webcam). Optional: camera_capture_root / "
