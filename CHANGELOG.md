@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [0.2.1] - 2026-09-29
+
+- **AbstractCore install hint.** When AbstractCore reports the camera backend,
+  its install hint now says that the camera plugin (`abstractcamera`) is not part
+  of AbstractCore's install settings (light, apple, gpu) and registers when it is
+  present in the same environment. It no longer prints a `pip install` command.
+- No API, CLI or dependency changes.
+
 ## [0.2.0] - 2026-08-06
 
 - **`standing_effect` fact declared (tool-tiers item-D ruled vocabulary,
