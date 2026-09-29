@@ -769,7 +769,7 @@
 <tr>
 <td>0005</td>
 <td>Linux/Windows webcam drivers</td>
-<td>The webcam driver is macOS/AVFoundation only (honest <code>available()=False</code> elsewhere); v4l2 and DirectShow enumeration are future families of work.</td>
+<td>The webcam driver is macOS/AVFoundation only (honest <code>available()=False</code> elsewhere); v4l2 and DirectShow enumeration are future families of work. Absorbed by 0022 (2026-09-29).</td>
 </tr>
 <tr>
 <td>0006</td>
@@ -805,6 +805,11 @@
 <td>0021</td>
 <td>Config-channel reach for deployment defaults (env adversary P2, 2026-07-21)</td>
 <td>The env-classification adversary confirmed ZERO behavior env vars (nothing to migrate under dm#177), but named two deployment-var reach gaps worth closing so "configurable on the gateway/console" holds fully: (a) <strong>capture-root console reach</strong> — owner/console config (<code>_owner_cfg("camera_capture_root")</code>) is read only in the capability plugin lane; the tool lane (<code>get_shared_service()</code> in abstractcore_tools) and CLI read env-or-default only, and the process-shared hub is last-caller-wins, so a tool-opened camera can keep the env layout after console config lands. Fix: resolve owner/console config at shared-service resolution, not only in the capability constructor. (b) <strong>DWARF hosts config surface</strong> — <code>ABSTRACTCAMERA_DWARF_HOSTS</code>/<code>_CLIENT_ID</code> have NO config surface at all (every production path constructs <code>DwarfDriver()</code> bare; env is the sole control); carry them through the owner-config channel at DWARF unpark (config-wins over env). Both are deployment-class (data dir / device addresses), env-legitimate today; these are polish toward the ruling's second half, not behavior migrations. P3 also: <code>_CONFIG_HINT</code> should lead with the config key and demote the env spelling.</td>
+</tr>
+<tr>
+<td>0022</td>
+<td>AbstractCamera in every AbstractCore install setting (planned)</td>
+<td>Operator ruling 2026-09-29: camera in light, apple and gpu. Not light work: the base installs wheel-only everywhere, but only macOS gets a working camera (no Linux/Windows webcam driver; headless Linux cannot import the GUI <code>opencv-python</code> without libGL). Plan, per-OS evidence and acceptance criteria: <a href="planned/0022_camera_in_every_abstractcore_setting/">planned/0022_camera_in_every_abstractcore_setting.md</a>.</td>
 </tr>
 </tbody>
 </table>

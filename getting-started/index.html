@@ -939,9 +939,9 @@
 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>abstractcamera<span class="w">                  </span><span class="c1"># webcam + simulator</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;abstractcamera[gphoto2]&quot;</span><span class="w">       </span><span class="c1"># + tethered PTP bodies</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;abstractcamera[clips,raw]&quot;</span><span class="w">     </span><span class="c1"># + MP4 encoding, RAW thumbnails</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;abstractcamera[dwarf]&quot;</span><span class="w">         </span><span class="c1"># + DWARF smart telescopes (Wi-Fi)</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"abstractcamera[gphoto2]"</span><span class="w">       </span><span class="c1"># + tethered PTP bodies</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"abstractcamera[clips,raw]"</span><span class="w">     </span><span class="c1"># + MP4 encoding, RAW thumbnails</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"abstractcamera[dwarf]"</span><span class="w">         </span><span class="c1"># + DWARF smart telescopes (Wi-Fi)</span>
 </code></pre></div>
 <p>macOS note for tethered bodies: the package releases Apple's PTP daemons
 (<code>ptpcamerad</code>/<code>mscamerad</code>) before claiming a camera — this is the standard
@@ -954,14 +954,14 @@ Info.plist or macOS kills the process instead of prompting.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">abstractcamera</span><span class="w"> </span><span class="kn">import</span> <span class="n">CameraManager</span><span class="p">,</span> <span class="n">list_cameras</span>
 
 <span class="k">for</span> <span class="n">camera</span> <span class="ow">in</span> <span class="n">list_cameras</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">camera</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">camera</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">),</span> <span class="n">camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name_confidence&quot;</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">camera</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">camera</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kind"</span><span class="p">),</span> <span class="n">camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name_confidence"</span><span class="p">))</span>
 <span class="c1"># ptp:usb:002,001            Sony DSC-A7r IV (Control)   None        reported</span>
 <span class="c1"># webcam:1A2B3C4D-5E6F-...   MacBook Pro Camera          built_in    reported</span>
 <span class="c1"># webcam:9F8E7D6C-0A1B-...   ... iPhone Camera           continuity  reported</span>
 
 <span class="n">manager</span> <span class="o">=</span> <span class="n">CameraManager</span><span class="p">()</span>
 <span class="n">manager</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>                      <span class="c1"># default: first PTP body, else built-in webcam</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="s2">&quot;webcam:1A2B3C4D-...&quot;</span><span class="p">)</span>  <span class="c1"># or pick explicitly</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="s2">"webcam:1A2B3C4D-..."</span><span class="p">)</span>  <span class="c1"># or pick explicitly</span>
 </code></pre></div>
 <p>Listing is non-invasive (no device opens, no LED). Webcam ids are
 AVFoundation uniqueIDs and the session opens THAT device object natively
@@ -977,24 +977,24 @@ works as a normal webcam-family camera.</p>
 <p>DWARF 3 units are Wi-Fi devices (<code>pip install "abstractcamera[dwarf]"</code>).
 Discovery is configured, not scanned: name the telescope's IP and it
 appears in <code>list_cameras()</code> like any other camera.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># AP mode (you joined the DWARF&#39;s own Wi-Fi): the device is always 192.168.88.1</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># AP mode (you joined the DWARF's own Wi-Fi): the device is always 192.168.88.1</span>
 <span class="c1"># STA mode (the DWARF joined YOUR network): the DWARFLAB app shows its IP</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">ABSTRACTCAMERA_DWARF_HOSTS</span><span class="o">=</span><span class="m">192</span>.168.88.1
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="n">manager</span> <span class="o">=</span> <span class="n">CameraManager</span><span class="p">()</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="s2">&quot;dwarf:192.168.88.1&quot;</span><span class="p">)</span>   <span class="c1"># master lock + RTSP live view</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="s2">"dwarf:192.168.88.1"</span><span class="p">)</span>   <span class="c1"># master lock + RTSP live view</span>
 
-<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">&quot;shutterspeed&quot;</span><span class="p">,</span> <span class="s2">&quot;15&quot;</span><span class="p">)</span>    <span class="c1"># the device&#39;s own gear tables</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">&quot;gain&quot;</span><span class="p">,</span> <span class="s2">&quot;80&quot;</span><span class="p">)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">"shutterspeed"</span><span class="p">,</span> <span class="s2">"15"</span><span class="p">)</span>    <span class="c1"># the device's own gear tables</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">"gain"</span><span class="p">,</span> <span class="s2">"80"</span><span class="p">)</span>
 <span class="n">manager</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>   <span class="c1"># shutter -&gt; DWARF album (microSD) -&gt; Wi-Fi download</span>
 
 <span class="c1"># The MOUNT is driven through one-shot actions (never cached, never replayed):</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;calibrate&quot;</span><span class="p">)</span>                     <span class="c1"># once, under open sky</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;gotoradec&quot;</span><span class="p">,</span> <span class="s2">&quot;83.82,-5.39,M42&quot;</span><span class="p">)</span>  <span class="c1"># RA/Dec in degrees (J2000)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;gotosolar&quot;</span><span class="p">,</span> <span class="s2">&quot;moon&quot;</span><span class="p">)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;joystick&quot;</span><span class="p">,</span> <span class="s2">&quot;90,1,5&quot;</span><span class="p">)</span>            <span class="c1"># angle°, length 0-1, °/s</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;joystickstop&quot;</span><span class="p">)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">&quot;autofocusdrive&quot;</span><span class="p">)</span>                <span class="c1"># astro autofocus</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"calibrate"</span><span class="p">)</span>                     <span class="c1"># once, under open sky</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"gotoradec"</span><span class="p">,</span> <span class="s2">"83.82,-5.39,M42"</span><span class="p">)</span>  <span class="c1"># RA/Dec in degrees (J2000)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"gotosolar"</span><span class="p">,</span> <span class="s2">"moon"</span><span class="p">)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"joystick"</span><span class="p">,</span> <span class="s2">"90,1,5"</span><span class="p">)</span>            <span class="c1"># angle°, length 0-1, °/s</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"joystickstop"</span><span class="p">)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">request_action</span><span class="p">(</span><span class="s2">"autofocusdrive"</span><span class="p">)</span>                <span class="c1"># astro autofocus</span>
 </code></pre></div>
 <p>GOTO/calibration/tracking progress arrives in the catch log
 (<code>get_events()</code>) as the device's own status notifications ("GOTO
@@ -1027,14 +1027,14 @@ same engine.</p>
 <div class="highlight"><pre><span></span><code><span class="n">status</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>               <span class="c1"># model, family, capabilities, config, fps...</span>
 <span class="n">jpeg</span><span class="p">,</span> <span class="n">seq</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_latest_frame</span><span class="p">()</span>  <span class="c1"># latest live-view JPEG</span>
 
-<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">&quot;iso&quot;</span><span class="p">,</span> <span class="s2">&quot;800&quot;</span><span class="p">)</span>
-<span class="c1"># -&gt; status()[&quot;pending_writes&quot;][&quot;iso&quot;] goes pending -&gt; confirmed | reverted</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_config_value</span><span class="p">(</span><span class="s2">"iso"</span><span class="p">,</span> <span class="s2">"800"</span><span class="p">)</span>
+<span class="c1"># -&gt; status()["pending_writes"]["iso"] goes pending -&gt; confirmed | reverted</span>
 <span class="c1">#    (dial-owned widgets on real bodies silently revert; the ledger says so)</span>
 
 <span class="n">manager</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>               <span class="c1"># single shot; downloads to set_capture_dir(...)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">&quot;burst&quot;</span><span class="p">,</span> <span class="n">burst_count</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>          <span class="c1"># count families</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">&quot;burst&quot;</span><span class="p">,</span> <span class="n">burst_hold_s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">burst_speed</span><span class="o">=</span><span class="s2">&quot;Hi&quot;</span><span class="p">)</span>  <span class="c1"># duration families (Sony)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">);</span> <span class="n">manager</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>  <span class="c1"># movie start/stop</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">"burst"</span><span class="p">,</span> <span class="n">burst_count</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>          <span class="c1"># count families</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">"burst"</span><span class="p">,</span> <span class="n">burst_hold_s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">burst_speed</span><span class="o">=</span><span class="s2">"Hi"</span><span class="p">)</span>  <span class="c1"># duration families (Sony)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_capture_mode</span><span class="p">(</span><span class="s2">"video"</span><span class="p">);</span> <span class="n">manager</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>  <span class="c1"># movie start/stop</span>
 </code></pre></div>
 <p>Consult <code>status()["capabilities"]</code> before building UI: burst mode
 (count vs duration), movie confirmability, the ISO-Auto story, Save-To
@@ -1045,13 +1045,13 @@ ever have — hide the rest).</p>
 
 <span class="n">hub</span> <span class="o">=</span> <span class="n">CameraHub</span><span class="p">()</span>                        <span class="c1"># capture root defaults to ~/Pictures</span>
 <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">hub</span><span class="o">.</span><span class="n">list_cameras</span><span class="p">():</span>         <span class="c1"># discovery + live state annotations</span>
-    <span class="n">status</span> <span class="o">=</span> <span class="n">hub</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">[</span><span class="s2">&quot;device_uid&quot;</span><span class="p">])</span>          <span class="c1"># nikon_z6_2, sony_dsc_a7r_iv, macbook_pro_camera...</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">hub</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">camera_id</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">status</span><span class="p">[</span><span class="s2">"device_uid"</span><span class="p">])</span>          <span class="c1"># nikon_z6_2, sony_dsc_a7r_iv, macbook_pro_camera...</span>
 
-<span class="n">nikon</span> <span class="o">=</span> <span class="n">hub</span><span class="o">.</span><span class="n">manager_for</span><span class="p">(</span><span class="s2">&quot;nikon_z6_2&quot;</span><span class="p">)</span>    <span class="c1"># each camera: its own CameraManager</span>
-<span class="n">nikon</span><span class="o">.</span><span class="n">start_interval_sequence</span><span class="p">(</span><span class="n">interval_s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">sequence_name</span><span class="o">=</span><span class="s2">&quot;orion run&quot;</span><span class="p">)</span>
-<span class="n">hub</span><span class="o">.</span><span class="n">manager_for</span><span class="p">(</span><span class="s2">&quot;sony_dsc_a7r_iv&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>   <span class="c1"># meanwhile, a Sony still</span>
-<span class="n">hub</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;macbook_pro_camera&quot;</span><span class="p">)</span>         <span class="c1"># the ACTIVE camera (default target)</span>
+<span class="n">nikon</span> <span class="o">=</span> <span class="n">hub</span><span class="o">.</span><span class="n">manager_for</span><span class="p">(</span><span class="s2">"nikon_z6_2"</span><span class="p">)</span>    <span class="c1"># each camera: its own CameraManager</span>
+<span class="n">nikon</span><span class="o">.</span><span class="n">start_interval_sequence</span><span class="p">(</span><span class="n">interval_s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">sequence_name</span><span class="o">=</span><span class="s2">"orion run"</span><span class="p">)</span>
+<span class="n">hub</span><span class="o">.</span><span class="n">manager_for</span><span class="p">(</span><span class="s2">"sony_dsc_a7r_iv"</span><span class="p">)</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>   <span class="c1"># meanwhile, a Sony still</span>
+<span class="n">hub</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">"macbook_pro_camera"</span><span class="p">)</span>         <span class="c1"># the ACTIVE camera (default target)</span>
 <span class="n">hub</span><span class="o">.</span><span class="n">disconnect_all</span><span class="p">()</span>
 </code></pre></div>
 <p>Each connected camera runs its own worker thread (libgphoto2 is thread-safe
@@ -1059,10 +1059,10 @@ per camera): live views stream concurrently and sequences/detection/
 recordings keep running on non-selected cameras. Hardware-validated with
 four simultaneous cameras (two PTP bodies + two webcams).</p>
 <h2 id="where-captures-land">Where captures land<a class="headerlink" href="#where-captures-land" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">manager</span><span class="o">.</span><span class="n">set_capture_root</span><span class="p">(</span><span class="s2">&quot;~/Pictures&quot;</span><span class="p">)</span>   <span class="c1"># the default</span>
+<div class="highlight"><pre><span></span><code><span class="n">manager</span><span class="o">.</span><span class="n">set_capture_root</span><span class="p">(</span><span class="s2">"~/Pictures"</span><span class="p">)</span>   <span class="c1"># the default</span>
 <span class="n">manager</span><span class="o">.</span><span class="n">request_trigger</span><span class="p">()</span>                <span class="c1"># -&gt; ~/Pictures/&lt;device_slug&gt;/capture_*.nef</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_sequence_name</span><span class="p">(</span><span class="s2">&quot;orion run&quot;</span><span class="p">)</span>   <span class="c1"># -&gt; ~/Pictures/&lt;device_slug&gt;/orion_run/...</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_save_policy</span><span class="p">(</span><span class="n">download_locally</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># stay on the camera&#39;s card</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_sequence_name</span><span class="p">(</span><span class="s2">"orion run"</span><span class="p">)</span>   <span class="c1"># -&gt; ~/Pictures/&lt;device_slug&gt;/orion_run/...</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_save_policy</span><span class="p">(</span><span class="n">download_locally</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># stay on the camera's card</span>
 </code></pre></div>
 <p>Device slugs are filesystem-safe model names (<code>nikon_z6_2</code>); two identical
 bodies get serial-suffixed folders. With local download OFF the event feed
@@ -1070,14 +1070,14 @@ still announces every capture (<code>saved on the camera</code>); a volatile cap
 target (camera RAM) plus device-only draws a loud warning — those shots
 would exist nowhere.</p>
 <h2 id="detection-intervalometer-rolling-clips">Detection, intervalometer, rolling clips<a class="headerlink" href="#detection-intervalometer-rolling-clips" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">manager</span><span class="o">.</span><span class="n">set_detection_mode</span><span class="p">(</span><span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;motion&quot;</span><span class="p">,</span> <span class="n">sensitivity</span><span class="o">=</span><span class="mi">70</span><span class="p">)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">set_detection_mode</span><span class="p">(</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;lightning&quot;</span><span class="p">)</span>   <span class="c1"># auto-fire</span>
+<div class="highlight"><pre><span></span><code><span class="n">manager</span><span class="o">.</span><span class="n">set_detection_mode</span><span class="p">(</span><span class="s2">"monitor"</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">"motion"</span><span class="p">,</span> <span class="n">sensitivity</span><span class="o">=</span><span class="mi">70</span><span class="p">)</span>
+<span class="n">manager</span><span class="o">.</span><span class="n">set_detection_mode</span><span class="p">(</span><span class="s2">"auto"</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">"lightning"</span><span class="p">)</span>   <span class="c1"># auto-fire</span>
 
 <span class="n">manager</span><span class="o">.</span><span class="n">start_interval_sequence</span><span class="p">(</span><span class="n">interval_s</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">start_delay_s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="c1"># absolute deadlines; per-sequence JSONL manifest under &lt;capture_dir&gt;/sequences/</span>
 
 <span class="n">manager</span><span class="o">.</span><span class="n">set_rolling_buffer</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">clip</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">save_rolling_clip</span><span class="p">()</span>      <span class="c1"># &quot;keep the last N seconds&quot; -&gt; MP4 ([clips])</span>
+<span class="n">clip</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">save_rolling_clip</span><span class="p">()</span>      <span class="c1"># "keep the last N seconds" -&gt; MP4 ([clips])</span>
 </code></pre></div>
 <h2 id="drive-cameras-from-abstractcore-an-ai-agent">Drive cameras from AbstractCore / an AI agent<a class="headerlink" href="#drive-cameras-from-abstractcore-an-ai-agent" title="Permanent link">&para;</a></h2>
 <p>Installing abstractcamera beside <code>abstractcore</code> registers the <code>camera</code>
@@ -1086,9 +1086,9 @@ lets an LLM pilot cameras:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">abstractcore</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_llm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abstractcamera.integrations.abstractcore_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">camera_tools</span>
 
-<span class="n">llm</span> <span class="o">=</span> <span class="n">create_llm</span><span class="p">(</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">&quot;qwen/qwen3-4b&quot;</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">create_llm</span><span class="p">(</span><span class="s2">"lmstudio"</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">"qwen/qwen3-4b"</span><span class="p">)</span>
 <span class="n">response</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
-    <span class="s2">&quot;Open the default camera and take a photo when something moves.&quot;</span><span class="p">,</span>
+    <span class="s2">"Open the default camera and take a photo when something moves."</span><span class="p">,</span>
     <span class="n">tools</span><span class="o">=</span><span class="n">camera_tools</span><span class="p">(),</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1116,7 +1116,7 @@ Global scope + name <code>camera</code> builds the key for you.</p>
 </code></pre></div>
 <p>Every transport is replaced by the simulator. Scenario scripting:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">abstractcamera.sim.gphoto2</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sim</span>
-<span class="n">sim</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">&quot;a7r4&quot;</span><span class="p">)</span>            <span class="c1"># or &quot;z6ii&quot; (default)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="s2">"a7r4"</span><span class="p">)</span>            <span class="c1"># or "z6ii" (default)</span>
 <span class="n">sim</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">trigger_latency_s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">inject_streaks</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
 </code></pre></div>
 <p>Tests inject the simulator per-manager instead:

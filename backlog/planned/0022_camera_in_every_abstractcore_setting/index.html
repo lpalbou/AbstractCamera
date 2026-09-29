@@ -1,0 +1,1073 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multi-camera control for Python — tethered PTP bodies, webcams, DWARF telescopes, and AbstractCore AI tool integration.">
+      
+      
+      
+        <link rel="canonical" href="https://www.lpalbou.info/AbstractCamera/backlog/planned/0022_camera_in_every_abstractcore_setting/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>0022 — AbstractCamera in every AbstractCore install setting (light, apple, gpu) - AbstractCamera</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#0022-abstractcamera-in-every-abstractcore-install-setting-light-apple-gpu" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="AbstractCamera" class="md-header__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AbstractCamera
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              0022 — AbstractCamera in every AbstractCore install setting (light, apple, gpu)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="AbstractCamera" class="md-nav__button md-logo" aria-label="AbstractCamera" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AbstractCamera
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lpalbou/AbstractCamera" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lpalbou/AbstractCamera
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Support
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Support
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backlog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADRs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-code-reality-checked-2026-09-29-abstractcamera-020-on-pypi-main-9172620" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current code reality (checked 2026-09-29, abstractcamera 0.2.0 on PyPI, main 9172620)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current code reality (checked 2026-09-29, abstractcamera 0.2.0 on PyPI, main 9172620)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-base-install-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the base install is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-works-per-os-with-the-base-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What works per OS with the base install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-headless-linux-import-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The headless-Linux import problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-2026-09-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests (2026-09-29)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abstractcore-side-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AbstractCore side today
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="0022-abstractcamera-in-every-abstractcore-install-setting-light-apple-gpu">0022 — AbstractCamera in every AbstractCore install setting (light, apple, gpu)<a class="headerlink" href="#0022-abstractcamera-in-every-abstractcore-install-setting-light-apple-gpu" title="Permanent link">&para;</a></h1>
+<p><strong>Created</strong>: 2026-09-29
+<strong>Status</strong>: Planned
+<strong>Priority</strong>: P2
+<strong>Area</strong>: packaging, cross-OS drivers, AbstractCore integration
+<strong>Related</strong>: backlog 0005 (Linux/Windows webcam drivers, which this item absorbs), ADR 0003
+(base deps carry frames), ADR 0006 (non-invasive discovery), ADR 0007 (regression policy for
+unconnected hardware), ADR 0009 (webcam identity by uniqueID), ADR 0012 (AbstractCore
+capability plugin)</p>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Operator ruling 2026-09-29: "abstractcamera should be in all settings, including light — it's
+more a feature of which camera is connected. This may or may not require tweaking so the library
+actually works across OS. If this is light work, do it now. If it's more complex, create a
+planned backlog item."</p>
+<p>Assessed 2026-09-29: it is <strong>not light work</strong>. The dependency itself installs wheel-only on
+macOS, Linux and Windows, but only macOS gets a working camera from it. On Linux and Windows the
+base install gives zero camera transports (no webcam driver exists there), and on headless Linux
+the base's <code>opencv-python</code> cannot even be imported without a system <code>libGL.so.1</code>. Adding
+<code>abstractcamera</code> to AbstractCore's base dependencies today would add 44–74 MB of wheels on
+Linux/Windows for a camera that cannot work there. This item makes the base install useful on
+all three systems first; AbstractCore then adds the dependency.</p>
+<h2 id="current-code-reality-checked-2026-09-29-abstractcamera-020-on-pypi-main-9172620">Current code reality (checked 2026-09-29, abstractcamera 0.2.0 on PyPI, main 9172620)<a class="headerlink" href="#current-code-reality-checked-2026-09-29-abstractcamera-020-on-pypi-main-9172620" title="Permanent link">&para;</a></h2>
+<h3 id="what-the-base-install-is">What the base install is<a class="headerlink" href="#what-the-base-install-is" title="Permanent link">&para;</a></h3>
+<p><code>pyproject.toml:44-53</code>: <code>numpy&gt;=1.24</code>, <code>opencv-python&gt;=4.8</code>, and on macOS only
+<code>pyobjc-framework-AVFoundation</code>, <code>-Quartz</code>, <code>-libdispatch</code> (ADR 0009). <code>requires-python &gt;=3.10</code>
+(<code>pyproject.toml:27</code>); AbstractCore supports <code>&gt;=3.9</code>, so a core dependency needs
+<code>; python_version &gt;= '3.10'</code> (the <code>abstract3d</code> precedent, core <code>pyproject.toml:98</code>).</p>
+<p>Resolution, <code>uv pip compile --only-binary :all:</code>, Python 3.12, 2026-09-29:</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Base resolves</th>
+<th>Adds over AbstractCore 2.19.0 light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macOS arm64</td>
+<td>yes: numpy 2.5.3, opencv-python 5.0.0.93, 7 pyobjc packages</td>
+<td>opencv-python + pyobjc (numpy already via pandas). Measured: light venv 551 MB → 711 MB (+160 MB; cv2 alone 128 MB, pyobjc ~30 MB)</td>
+</tr>
+<tr>
+<td>Linux x86_64 (manylinux_2_28)</td>
+<td>yes: numpy, opencv-python</td>
+<td>opencv-python (73.8 MB wheel)</td>
+</tr>
+<tr>
+<td>Windows x86_64</td>
+<td>yes: numpy, opencv-python</td>
+<td>opencv-python (44.0 MB wheel)</td>
+</tr>
+</tbody>
+</table>
+<p>Extras (same method; macOS with <code>MACOSX_DEPLOYMENT_TARGET=14.0</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Extra</th>
+<th>macOS arm64</th>
+<th>Linux x86_64</th>
+<th>Windows x86_64</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gphoto2</code> (tethered PTP)</td>
+<td>wheel 2.6.4 for macOS 14+ only (6.5 MB, bundles libgphoto2 in <code>gphoto2/.dylibs</code>; no wheel for macOS 13 target)</td>
+<td>wheel 2.6.4 (11.8 MB)</td>
+<td><strong>no wheel; libgphoto2 does not support Windows</strong></td>
+</tr>
+<tr>
+<td><code>clips</code> (PyAV)</td>
+<td>av wheel (18.2 MB)</td>
+<td>av wheel (35.8 MB)</td>
+<td>av wheel (27.6 MB)</td>
+</tr>
+<tr>
+<td><code>raw</code> (rawpy)</td>
+<td>wheel (2.1 MB)</td>
+<td>wheel (3.0 MB)</td>
+<td>wheel (0.9 MB)</td>
+</tr>
+<tr>
+<td><code>dwarf</code> (websocket-client)</td>
+<td>pure Python (0.1 MB)</td>
+<td>same</td>
+<td>same</td>
+</tr>
+</tbody>
+</table>
+<p>Already present in the other settings (resolved <code>abstractcore[apple]==2.19.0</code> on macOS 14 arm64,
+<code>abstractcore[gpu]==2.19.0</code> on manylinux_2_35 and Windows): <code>apple</code> already has <code>opencv-python</code>
+4.14 (via mlx-vlm / mlx-gen) and <code>av</code>; Linux <code>gpu</code> already has <code>opencv-python</code> (via mlx-gen) <strong>and</strong>
+<code>opencv-python-headless</code> (via vllm / mistral-common) plus <code>av</code>; Windows <code>gpu</code> has only
+<code>opencv-python-headless</code> and <code>av</code>. So on <code>apple</code> the camera adds only the pyobjc packages; on
+Windows <code>gpu</code> it adds a second OpenCV distribution (dual <code>cv2</code> install). AbstractVision 0.3.32
+removed mlx-gen from <code>gpu</code>, so Linux <code>gpu</code> will soon have only <code>opencv-python-headless</code> and the
+camera would reintroduce the dual install there too.</p>
+<h3 id="what-works-per-os-with-the-base-install">What works per OS with the base install<a class="headerlink" href="#what-works-per-os-with-the-base-install" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>macOS</strong>: webcams (built-in, USB, Continuity) through native AVFoundation, hardware-validated
+  (ADR 0009, <code>scripts/validate_webcam_identity.py</code>); tethered bodies with <code>[gphoto2]</code>; DWARF with
+  <code>[dwarf]</code> + configured hosts.</li>
+<li><strong>Linux</strong>: no webcam driver. <code>WebcamDriver.available()</code> returns False off macOS
+  (<code>src/abstractcamera/drivers/webcam_driver.py:35</code>, "v4l2/Windows enumeration is future work").
+  Only <code>[gphoto2]</code> bodies and DWARF work, both behind extras.</li>
+<li><strong>Windows</strong>: no webcam driver, no gphoto2 wheel. Only DWARF, behind <code>[dwarf]</code> + configured hosts.</li>
+</ul>
+<p>Probe (scratch venv with AbstractCore 2.19.0 light + abstractcamera 0.2.0, platform facts patched
+to Linux / Windows, no device touched, no <code>ABSTRACTCAMERA_FAKE</code>): <code>resolve_drivers() == []</code>,
+<code>list_cameras() == []</code>, plugin <code>available_providers() == []</code>, <code>list_models() == []</code>, and the
+default connect raises <code>CameraControlError("No camera transport is available — install
+abstractcamera[gphoto2] ...")</code> (<code>src/abstractcamera/discovery.py:118</code>). The degradation is clean,
+but that message advises a bare extra, which the 2026-09-29 install-hint ruling forbids for an
+AbstractCore user.</p>
+<h3 id="the-headless-linux-import-problem">The headless-Linux import problem<a class="headerlink" href="#the-headless-linux-import-problem" title="Permanent link">&para;</a></h3>
+<p>The Linux <code>opencv-python</code> wheel is the GUI build: its bundled <code>libQt5Gui</code> links <code>libGL.so.1</code>,
+which manylinux leaves to the host (checked by reading the 5.0.0.93 manylinux_2_28 wheel;
+<code>opencv-python-headless</code> has no Qt and no GL reference). On a server or container without
+<code>libgl1</code>, <code>import cv2</code> fails. <code>camera_manager.py:21</code> imports cv2 at module top, and the plugin's
+<code>list_models()</code> → <code>list_cameras()</code> → <code>CameraService</code> path imports <code>camera_manager</code> (traced in the
+probe: cv2 is first imported by <code>list_models</code>, not by registration or <code>available_providers</code>). So on
+such a host, AbstractCore's catalog call for the camera capability would raise ImportError instead
+of reporting "no camera". abstractcamera itself never uses highgui (no <code>imshow</code> / <code>namedWindow</code> /
+<code>waitKey</code> in <code>src/</code>), so the headless build would serve it; ADR 0003 chose <code>opencv-python</code> and
+accepted the double install with hosts shipping headless.</p>
+<h3 id="tests-2026-09-29">Tests (2026-09-29)<a class="headerlink" href="#tests-2026-09-29" title="Permanent link">&para;</a></h3>
+<p><code>pytest tests</code> against the installed 0.2.0 wheel with OpenCV <strong>5.0.0</strong> (what a fresh install
+resolves today, the floor has no cap) and AbstractCore 2.19.0: 311 passed. OpenCV 5 is therefore
+not a blocker on macOS.</p>
+<h3 id="abstractcore-side-today">AbstractCore side today<a class="headerlink" href="#abstractcore-side-today" title="Permanent link">&para;</a></h3>
+<p>Core's default install hint for a missing camera plugin says camera is not part of the three
+settings (<code>abstractcore/capabilities/registry.py:649-656</code>, <code>server/camera_endpoints.py:83</code>), and
+this package's own hint says the same (<code>integrations/abstractcore_plugin.py:52-58</code>, commit
+9172620). Both must change in the same wave that adds the dependency.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>pip install abstractcore</code> (and <code>[apple]</code>, <code>[gpu]</code>) installs abstractcamera, and every machine
+  with a connected camera can use it: webcams on macOS, Linux and Windows; tethered bodies
+  wherever libgphoto2 wheels exist.</li>
+<li>A machine with no camera reports "no camera connected" through every surface (plugin, tools,
+  <code>/v1/camera/*</code>, catalog) without raising, on all three systems, including headless Linux.</li>
+</ul>
+<h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>OpenCV distribution decision</strong> (revisits ADR 0003; write the ADR amendment). Options:
+   (a) switch the base to <code>opencv-python-headless</code> (no GL dependency, same <code>cv2</code> API minus
+   highgui, which is unused) — but <code>apple</code> pulls <code>opencv-python</code> via mlx-vlm / mlx-gen, so macOS
+   <code>apple</code> would hold both; (b) keep <code>opencv-python</code> everywhere and make every catalog/list path
+   cv2-free (lazy import of <code>camera_manager</code> behind <code>list_cameras</code>, which only needs drivers),
+   so a missing <code>libGL</code> breaks capture only, with an honest error; (c) platform markers
+   (<code>opencv-python</code> on darwin/win32, <code>opencv-python-headless</code> on linux). Measure each against the
+   three resolved settings (dual-install count per setting) and pick one. Whatever is chosen, the
+   catalog path must not import cv2 (fix (b) is needed in every option).</li>
+<li><strong>Linux webcam driver (V4L2)</strong>, absorbing backlog 0005's Linux half. Non-invasive
+   enumeration from sysfs (<code>/sys/class/video4linux/video*/name</code>, capture-capable nodes only) with
+   stable identity from <code>/dev/v4l/by-id/*</code> (fallback <code>by-path</code>), never positional indices (ADR
+   0009); capture by device path through <code>cv2.VideoCapture(path, cv2.CAP_V4L2)</code>; permission errors
+   (<code>video</code> group) reported honestly. Pure Python + OpenCV; no new dependency.</li>
+<li><strong>Windows webcam driver</strong>, absorbing 0005's Windows half. OpenCV cannot enumerate device names,
+   and opening by MSMF/DirectShow index is exactly the positional mapping ADR 0009 forbids. Candidate
+   stacks to measure: WinRT <code>Windows.Devices.Enumeration</code> (id + name; <code>winrt-*</code> wheels) with capture
+   through WinRT <code>MediaCapture</code> or a verified id→index mapping; or DirectShow enumeration
+   (<code>pygrabber</code>). Any new dependency must be wheel-only, permissive-licensed and marked
+   <code>sys_platform == 'win32'</code>.</li>
+<li><strong>Hints</strong>: the "No camera transport is available" message and <code>_INSTALL_HINT</code> stop naming
+   bare extras for AbstractCore users; say which transports this host has and that the camera is
+   part of every setting.</li>
+<li><strong>Transport extras in the settings</strong> (decide per extra, then tell core): <code>dwarf</code>
+   (websocket-client, 0.1 MB, pure Python) can move to base; <code>raw</code> is small and wheel-only
+   everywhere; <code>clips</code> (av) is already in <code>apple</code> and <code>gpu</code>; <code>gphoto2</code> has wheels for macOS 14+
+   arm64 and Linux only, so at most a platform-marked entry in <code>apple</code> (macOS) and <code>gpu</code> (Linux),
+   never in light, never on Windows.</li>
+<li><strong>Python 3.9</strong>: core's dependency carries <code>python_version &gt;= '3.10'</code> (the camera stays absent on
+   3.9, reported by core's existing hint) — or the package lowers its floor; decide.</li>
+</ol>
+<h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>New camera families (Canon EOS is 0006), bulb (0002), DWARF choreography (0020).</li>
+<li>Advising any install command other than the three AbstractCore settings.</li>
+</ul>
+<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A Linux machine with a UVC webcam and a Windows machine with a webcam for the hardware
+  validations (ADR 0007: success claims need the named validations; simulators cannot prove
+  enumeration identity).</li>
+<li>AbstractCore owner for the core half (base dependency, hints, docs, <code>tests/test_install_settings.py</code>,
+  the install-hint guard test) and the root <code>abstractframework</code> pins (release sequence:
+  abstractcamera release → abstractcore → root).</li>
+</ul>
+<h2 id="acceptance-criteria">Acceptance criteria<a class="headerlink" href="#acceptance-criteria" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] <code>uv pip compile --only-binary :all:</code> resolves <code>abstractcore</code> (with the new dependency) for
+      macOS arm64, Linux x86_64 manylinux_2_28 and Windows x86_64, and <code>[apple]</code> / <code>[gpu]</code> on their
+      platforms; the report lists what the camera adds per setting and the number of OpenCV
+      distributions installed per setting.</li>
+<li>[ ] In a clean container without <code>libgl1</code> (e.g. <code>python:3.12-slim</code>), <code>import abstractcamera</code>,
+      plugin registration, <code>available_providers()</code>, <code>list_models()</code> and <code>/v1/camera/cameras</code> report
+      no camera without raising.</li>
+<li>[ ] Linux: a UVC webcam is listed with a by-id identity without being opened (no LED), and
+      captures a photo; unplug/replug keeps its id; <code>validate_webcam_identity</code>-style script passes.</li>
+<li>[ ] Windows: same as Linux with the chosen stack; two cameras never swap identities.</li>
+<li>[ ] Hints: no runtime string advises <code>pip install abstractcamera...</code> to an AbstractCore user
+      (core's <code>tests/test_install_hints_no_bare_packages.py</code> covers the camera plugin strings).</li>
+<li>[ ] ADR 0003 amended (OpenCV distribution) and ADR 0009 extended (identity on Linux/Windows).</li>
+<li>[ ] Core half landed: <code>abstractcamera&gt;=&lt;released version&gt;; python_version &gt;= '3.10'</code> in core
+      base dependencies, camera hint says "part of every setting", docs + CHANGELOG + llms files
+      regenerated, core hermetic suite green.</li>
+</ul>
+<h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
+<p>Hermetic: simulator-backed tests for the new drivers (sysfs and WinRT enumerations faked from
+recorded fixtures), the <code>uv pip compile</code> matrix above, a headless-container import test.
+Hardware: one Linux and one Windows webcam session each, with transcripts recorded under
+<code>scripts/validate_*</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
